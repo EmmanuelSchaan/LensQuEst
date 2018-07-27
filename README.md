@@ -1,4 +1,4 @@
-#  Estimators for CMB lensing: standard quadratic estimator, shear and magnification (https://arxiv.org/abs/1804.06403).
+#  CMB lensing: standard quadratic estimator, shear and magnification (https://arxiv.org/abs/1804.06403).
 
 Manipulate flat sky maps (FFT, filtering, power spectrum, generating Gaussian random field, applying lensing to a map, etc).
 Forecast the noise on CMB lensing estimators (standard, shear-only, magnification-only).
