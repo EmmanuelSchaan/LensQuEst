@@ -1418,7 +1418,7 @@ class FlatMap(object):
 
    def computeQuadEstPhiNormalizationAna(self, fN_phi_TT, test=False):
       """the normalization is N_l^phiphi,
-      obtained from the analytical calculation for the reconstruction noise
+      obtained by evaluating the analytical calculation for the reconstruction noise
       """
       W = np.array(map(fN_phi_TT, self.l.flatten()))
       W = np.nan_to_num(W)
@@ -1598,15 +1598,17 @@ class FlatMap(object):
       return result
 
 
-   def forecastN0Kappa(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, test=False):
+   def forecastN0Kappa(self, fC0, fCtot, lMin=1., lMax=1.e5, fCfgNoise=None, test=False):
       """Interpolates the result for N_L^kappa = f(L),
       to be used for forecasts on lensing reconstruction
       """
       print "computing the reconstruction noise"
-      if fCfg is None:
+      # Standard reconstruction noise
+      if fCfgNoise is None:
          n0Phi = self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+      # Gaussian noise contribution from the foregrounds only
       else:
-         n0Phi = self.computeQuadEstPhiNormalizationFgFFT(fC0, fCtot, fCfg, lMin=lMin, lMax=lMax, test=test)
+         n0Phi = self.computeQuadEstPhiNormalizationFgNoiseFFT(fC0, fCtot, fCfgNoise, lMin=lMin, lMax=lMax, test=test)
       # keep only the real part (the imag. part should be zero, but is tiny in practice)
       n0Phi = np.real(n0Phi)
       # remove the nans
@@ -1649,10 +1651,10 @@ class FlatMap(object):
    
    
    ###############################################################################
-   # N0 term from foregrounds in the CMB map
+   # Gaussian N0 term from foregrounds in the CMB map
    
    
-   def computeQuadEstPhiNormalizationFgFFT(self, fC0, fCtot, fCfg, lMin=1., lMax=1.e5, test=False):
+   def computeQuadEstPhiNormalizationFgNoiseFFT(self, fC0, fCtot, fCfgNoise, lMin=1., lMax=1.e5, test=False):
       """Computes the N^{0 fg phiphi}_L due to foreground power in the temperature map
       N^{0 fg phiphi}_L = N^{0 phiphi}_L^2 * integral.
       """
@@ -1661,7 +1663,7 @@ class FlatMap(object):
          if (l<lMin) or (l>lMax):
             return 0.
          result = 1./fCtot(l)
-         result *= fCfg(l)/fCtot(l)
+         result *= fCfgNoise(l)/fCtot(l)
          if not np.isfinite(result):
             result = 0.
          return result
@@ -1674,7 +1676,7 @@ class FlatMap(object):
          if (l<lMin) or (l>lMax):
             return 0.
          result = fC0(l)**2/fCtot(l)
-         result *= fCfg(l)/fCtot(l)
+         result *= fCfgNoise(l)/fCtot(l)
          if not np.isfinite(result):
             result = 0.
          return result
@@ -1711,7 +1713,7 @@ class FlatMap(object):
          if (l<lMin) or (l>lMax):
             return 0.
          result = fC0(l)/fCtot(l)
-         result *= fCfg(l)/fCtot(l)
+         result *= fCfgNoise(l)/fCtot(l)
          # artificial factor of i such that f(-l) = f(l)*,
          # such that f(x) is real
          result *= 1.j
@@ -1771,6 +1773,172 @@ class FlatMap(object):
          plt.show()
 
       return result
+
+
+
+   ###############################################################################
+   # Lensing multiplicative bias from lensed foregrounds
+
+   def computeMultBiasLensedForegrounds(self, fC0, fCtot, fCfgBias, lMin=1., lMax=1.e5, test=False):
+      """Multiplicative bias to CMB lensing
+      from lensed foregrounds in the CMB map.
+      fCfgBias: unlensed foreground power spectrum.
+      Such that:
+      <QE> = kappa_CMB + (multiplicative bias) * kappa_foreground + noise.
+      """
+      # inverse-var weighted map
+      def f(l):
+         if (l<lMin) or (l>lMax):
+            return 0.
+         result = 1./fCtot(l)
+         if not np.isfinite(result):
+            result = 0.
+         return result
+      iVarFourier = np.array(map(f, self.l.flatten()))
+      iVarFourier = iVarFourier.reshape(self.l.shape)
+      iVar = self.inverseFourier(dataFourier=iVarFourier)
+
+      # C map
+      def f(l):
+         if (l<lMin) or (l>lMax):
+            return 0.
+         result = fC0(l)*fCfgBias(l)/fCtot(l)
+         if not np.isfinite(result):
+            result = 0.
+         return result
+      CFourier = np.array(map(f, self.l.flatten()))
+      CFourier = CFourier.reshape(self.l.shape)
+
+      # term 1x
+      term1x = self.inverseFourier(dataFourier= self.lx**2 * CFourier)
+      term1x *= iVar
+      term1xFourier = self.fourier(data=term1x)
+      term1xFourier *= self.lx**2
+      #
+      # term 1y
+      term1y = self.inverseFourier(dataFourier= self.ly**2 * CFourier)
+      term1y *= iVar
+      term1yFourier = self.fourier(data=term1y)
+      term1yFourier *= self.ly**2
+      #
+      # term 1xy
+      term1xy = self.inverseFourier(dataFourier= 2. * self.lx * self.ly * CFourier)
+      term1xy *= iVar
+      term1xyFourier = self.fourier(data=term1xy)
+      term1xyFourier *= self.lx * self.ly
+      
+      if test:
+         self.plotFourier(term1xFourier)
+         self.plotFourier(term1yFourier)
+         self.plotFourier(term1xyFourier)
+         self.plotFourier(term1xFourier+term1yFourier+term1xyFourier)
+      
+
+      # WF map
+      def f(l):
+         if (l<lMin) or (l>lMax):
+            return 0.
+         result = fC0(l)/fCtot(l)
+         # artificial factor of i such that f(-l) = f(l)*,
+         # such that f(x) is real
+         result *= 1.j
+         if not np.isfinite(result):
+            result = 0.
+         return result
+      WFFourier = np.array(map(f, self.l.flatten()))
+      WFFourier = WFFourier.reshape(self.l.shape)
+      # term 2
+      term2_x = self.inverseFourier(dataFourier= self.lx * WFFourier)
+      term2_y = self.inverseFourier(dataFourier= self.ly * WFFourier)
+
+      # WF map, for foreground
+      def f(l):
+         if (l<lMin) or (l>lMax):
+            return 0.
+         result = fCfgBias(l)/fCtot(l)
+         # artificial factor of i such that f(-l) = f(l)*,
+         # such that f(x) is real
+         result *= 1.j
+         if not np.isfinite(result):
+            result = 0.
+         return result
+      fgWFFourier = np.array(map(f, self.l.flatten()))
+      fgWFFourier = fgWFFourier.reshape(self.l.shape)
+      # term 2
+      term2_x_fg = self.inverseFourier(dataFourier= self.lx * fgWFFourier)
+      term2_y_fg = self.inverseFourier(dataFourier= self.ly * fgWFFourier)
+      
+      
+      # term 2x
+      term2x = term2_x * term2_x_fg
+      term2xFourier = self.fourier(data=term2x)
+      term2xFourier *= self.lx**2
+      # minus sign to correct the artificial i**2
+      term2xFourier *= -1.
+      #
+      # term 2y
+      term2y = term2_y * term2_y_fg
+      term2yFourier = self.fourier(data=term2y)
+      term2yFourier *= self.ly**2
+      # minus sign to correct the artificial i**2
+      term2yFourier *= -1.
+      #
+      # term 2xy
+      term2xy = term2_x * term2_y_fg
+      term2xy += term2_x_fg * term2_y
+      term2xyFourier = self.fourier(data=term2xy)
+      term2xyFourier *= self.lx * self.ly
+      # minus sign to correct the artificial i**2
+      term2xyFourier *= -1.
+
+      if test:
+         self.plotFourier(term2xFourier)
+         self.plotFourier(term2yFourier)
+         self.plotFourier(term2xyFourier)
+         self.plotFourier(term2xFourier+term2yFourier+term2xyFourier)
+
+      # add all terms
+      result = term1xFourier + term1yFourier + term1xyFourier
+      result += term2xFourier + term2yFourier + term2xyFourier
+
+      # cut off the high ells from phi normalization map
+      f = lambda l: (l<=2.*lMax)
+      result = self.filterFourierIsotropic(f, dataFourier=result, test=False)
+
+      # normalize by the standard N0
+      result *= self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=False)
+      result[np.where(np.isfinite(result)==False)] = 0.
+
+      if test:
+         plt.loglog(self.l.flatten(), np.abs(result.flatten()), 'k.')
+         plt.loglog(self.l.flatten(), np.abs(np.real(result.flatten())), 'b.')
+         plt.loglog(self.l.flatten(), np.imag(result.flatten()), 'g.')
+         plt.show()
+
+      return result
+
+
+   def forecastMultBiasLensedForegrounds(self, fC0, fCtot, fCfgBias, lMin=1., lMax=1.e5, test=False):
+      """Interpolates the multiplicative bias to CMB lensing
+      due to lensed foregrounds in the map
+      """
+      print "computing the multiplicative bias"
+      result = self.computeMultBiasLensedForegrounds(fC0, fCtot, fCfgBias, lMin=lMin, lMax=lMax, test=test)
+      # keep only the real part (the imag. part should be zero, but is tiny in practice)
+      result = np.real(result)
+      # remove the nans
+      result = np.nan_to_num(result)
+
+      # fix the issue of the wrong ell=0 value
+      # replace it by the value lx=0, ly=fundamental
+      result[0,0] = result[0,1]
+      
+      # interpolate, preserving the sign
+      lnfln = interp1d(np.log(self.l.flatten()), np.log(np.abs(result).flatten()), kind='linear', bounds_error=False, fill_value=0.)
+      signln = interp1d(np.log(self.l.flatten()), np.sign(result.flatten()), kind='linear', bounds_error=False, fill_value=0.)
+      f = lambda l: np.exp(lnfln(np.log(l))) * signln(np.log(l))
+      return f
+
 
 
    ###############################################################################
@@ -2090,48 +2258,6 @@ class FlatMap(object):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    ###############################################################################
    ###############################################################################
    # Dilation-only estimator
@@ -2217,8 +2343,9 @@ class FlatMap(object):
 
    def computeQuadEstPhiDilationNormalizationFFT(self, fC0, fCtot, fC0wg=None, lMin=5.e2, lMax=3.e3, test=False):
       """Multiplicative normalization for phi estimator from dilation only,
-      computed with FFT
-      ell cuts are performed to remain in the regime L_phi < l_T
+      computed with FFT.
+      This normalization does not correct for the estimator's multiplicative bias.
+      C0wg: a hypothetical wiggle-only or no-wiggle unlensed CMB power spectrum.
       """
       if fC0wg is None:
          fC0wg = fC0
@@ -2268,7 +2395,7 @@ class FlatMap(object):
       """Multiplicative normalization for phi estimator from dilation only,
       computed with FFT.
       This normalization corrects for the multiplicative bias in the estimator.
-      ell cuts are performed to remain in the regime L_phi < l_T
+      C0wg: a hypothetical wiggle-only or no-wiggle unlensed CMB power spectrum.
       """
       if fC0wg is None:
          fC0wg = fC0
@@ -2298,7 +2425,8 @@ class FlatMap(object):
       dilation = self.inverseFourier(dilationFourier)
       
       print "generate gradient map"
-      c0Fourier = self.filterFourierIsotropic(fC0, dataFourier=np.ones_like(self.l), test=test)
+      f = lambda l: fC0(l) * (l>=lMin) * (l<=lMax)
+      c0Fourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       # the factor i in the gradient makes the Fourier function Hermitian
       gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
       gradX = self.inverseFourier(gradXFourier) # extra factor of i will be cancelled later
@@ -2315,6 +2443,9 @@ class FlatMap(object):
       # sum and invert
       resultFourier = 1. / (termXFourier + termYFourier)
       resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
+      # remove L > 2 lMax
+      f = lambda l: (l <= 2. * lMax)
+      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
       if test:
          print "showing termXFourier"
          self.plotFourier(termXFourier)
@@ -2380,6 +2511,7 @@ class FlatMap(object):
          return result
    
       # First, the symmetric term
+      print "symmetric term"
       f = lambda l: g(l) * fCfg(l)
       term1Fourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       term1 = self.inverseFourier(term1Fourier)
@@ -2388,11 +2520,13 @@ class FlatMap(object):
          self.plotFourier(term1Fourier)
       
       # Second, the asymmetric term
+      print "asymmetric term"
       f = lambda l: g(l)**2 * fCfg(l)
       term2aFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       term2a = self.inverseFourier(term2aFourier)
       #
-      f = lambda l: fCfg(l)
+#!!!! Problem: no ell max here!
+      f = lambda l: fCfg(l) * (l>=lMin) * (l<=lMax)
       term2bFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       term2b = self.inverseFourier(term2bFourier)
       #
@@ -2401,11 +2535,13 @@ class FlatMap(object):
          self.plotFourier(term2Fourier)
       
       # add term1 and term2
+      print "add two terms"
       resultFourier = term1Fourier + term2Fourier
       if test:
          self.plotFourier(term1Fourier + term2Fourier)
 
       # compute normalization
+      print "normalization"
       if corr:
          normalizationFourier = self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test)
       else:
@@ -2413,6 +2549,10 @@ class FlatMap(object):
 
       # multiply by squared normalization
       resultFourier *= normalizationFourier**2
+      
+      # remove L > 2 lMax
+      f = lambda l: (l <= 2. * lMax)
+      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
 
       return resultFourier
 
@@ -2440,7 +2580,97 @@ class FlatMap(object):
       lnfln = interp1d(np.log(self.l.flatten()), np.log(n0Kappa.flatten()), kind='linear', bounds_error=False, fill_value=0.)
       f = lambda l: np.exp(lnfln(np.log(l)))
       return f
+
+
+   ###############################################################################
+   # Lensing multiplicative bias from lensed foregrounds
    
+   def computeMultBiasLensedForegroundsDilation(self, fC0, fCtot, fCfgBias, lMin=5.e2, lMax=3.e3, test=False):
+      """Multiplicative bias to the dilation estimator
+      from lensed foregrounds in the CMB map.
+      fCfgBias: unlensed foreground power spectrum.
+      Such that:
+      <dilation> = kappa_CMB + (multiplicative bias) * kappa_foreground + noise.
+      """
+      
+      def fdLnl2C0dLnl(l):
+         e = 0.01
+         lup = l*(1.+e)
+         ldown = l*(1.-e)
+         result = lup**2 * fC0(lup)
+         result /= ldown**2 * fC0(ldown)
+         result = np.log(result) / (2.*e)
+         return result
+
+      def f(l):
+         # cut off the high ells from input map
+         if (l<lMin) or (l>lMax):
+            return 0.
+         result = fC0(l) / fCtot(l)**2
+         result *= fdLnl2C0dLnl(l) # for isotropic dilation
+         result /= 0.5
+         if not np.isfinite(result):
+            result = 0.
+         return result
+      
+      print "generate dilation map"
+      dilationFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
+      dilation = self.inverseFourier(dilationFourier)
+      
+      print "generate gradient map"
+      c0Fourier = self.filterFourierIsotropic(fCfgBias, dataFourier=np.ones_like(self.l), test=test)
+      # the factor i in the gradient makes the Fourier function Hermitian
+      gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
+      gradX = self.inverseFourier(gradXFourier) # extra factor of i will be cancelled later
+      gradY = self.inverseFourier(gradYFourier) # extra factor of i will be cancelled later
+      
+      # termx
+      termXFourier = self.fourier(gradX * dilation)
+      termXFourier *= 2. * self.lx / self.l**2 / 1.j # factor of i to cancel the one in the gradient
+      termXFourier[np.where(np.isfinite(termXFourier)==False)] = 0.
+      # termy
+      termYFourier = self.fourier(gradY * dilation)
+      termYFourier *= 2. * self.ly / self.l**2 / 1.j # factor of i to cancel the one in the gradient
+      termYFourier[np.where(np.isfinite(termYFourier)==False)] = 0.
+      # sum
+      resultFourier = termXFourier + termYFourier
+      if test:
+         print "showing termXFourier"
+         self.plotFourier(termXFourier)
+         print "showing termYFourier"
+         self.plotFourier(termYFourier)
+         print "showing sum"
+         self.plotFourier(resultFourier)
+      
+      # normalize with the standard normalization
+      resultFourier *= self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, fC0wg=None, lMin=lMin, lMax=lMax, test=False)
+      
+      resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
+      return resultFourier
+
+
+   def forecastMultBiasLensedForegroundsDilation(self, fC0, fCtot, fCfgBias, lMin=1., lMax=1.e5, test=False):
+      """Interpolates the multiplicative bias to the dilation estimator
+      due to lensed foregrounds in the map
+      """
+      print "computing the multiplicative bias"
+      result = self.computeMultBiasLensedForegroundsDilation(fC0, fCtot, fCfgBias, lMin=lMin, lMax=lMax, test=test)
+      # keep only the real part (the imag. part should be zero, but is tiny in practice)
+      result = np.real(result)
+      # remove the nans
+      result = np.nan_to_num(result)
+
+      # fix the issue of the wrong ell=0 value
+      # replace it by the value lx=0, ly=fundamental
+      result[0,0] = result[0,1]
+      
+      # interpolate, preserving the sign
+      lnfln = interp1d(np.log(self.l.flatten()), np.log(np.abs(result).flatten()), kind='linear', bounds_error=False, fill_value=0.)
+      signln = interp1d(np.log(self.l.flatten()), np.sign(result.flatten()), kind='linear', bounds_error=False, fill_value=0.)
+      f = lambda l: np.exp(lnfln(np.log(l))) * signln(np.log(l))
+      return f
+   
+
 
 
    ###############################################################################
@@ -2654,7 +2884,8 @@ class FlatMap(object):
       cosY = self.inverseFourier(cosYFourier)
       
       print "generate gradient map"
-      c0Fourier = self.filterFourierIsotropic(fC0, dataFourier=np.ones_like(self.l), test=test)
+      f = lambda l: fC0(l) * (l>=lMin) * (l<=lMax)
+      c0Fourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       # the factor i in the gradient makes the Fourier function Hermitian
       gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
       gradX = self.inverseFourier(gradXFourier) # extra factor of i will be cancelled later
@@ -2690,6 +2921,9 @@ class FlatMap(object):
       # sum and invert
       resultFourier = 1. / (gradXcosXFourier + gradYcosXFourier + gradXcosYFourier + gradYcosYFourier)
       resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
+      # remove L > 2 lMax
+      f = lambda l: (l <= 2. * lMax)
+      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
       if test:
          print "showing result"
          self.plotFourier(resultFourier)
@@ -2783,7 +3017,7 @@ class FlatMap(object):
 
 
       # Second, the asymmetric term
-      f = lambda l: fCfg(l)
+      f = lambda l: fCfg(l) * (l>=lMin) * (l<=lMax)
       term2bFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       term2b = self.inverseFourier(term2bFourier)
       #
@@ -2825,6 +3059,10 @@ class FlatMap(object):
       # divide by squared normalization
       resultFourier *= normalizationFourier**2
 
+      # remove L > 2 lMax
+      f = lambda l: (l <= 2. * lMax)
+      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
+      
       return resultFourier
 
 
@@ -2852,6 +3090,119 @@ class FlatMap(object):
 
 
    ###############################################################################
+   # Lensing multiplicative bias from lensed foregrounds
+   
+   def computeMultBiasLensedForegroundsShear(self, fC0, fCtot, fCfgBias, lMin=5.e2, lMax=3.e3, test=False):
+      """Multiplicative bias to the shear estimator
+      from lensed foregrounds in the CMB map.
+      fCfgBias: unlensed foreground power spectrum.
+      Such that:
+      <shear> = kappa_CMB + (multiplicative bias) * kappa_foreground + noise.
+      """
+      # weight function for shear
+      def fdLnC0dLnl(l):
+         e = 0.01
+         lup = l*(1.+e)
+         ldown = l*(1.-e)
+         result = fC0(lup) / fC0(ldown)
+         result = np.log(result) / (2.*e)
+         return result
+
+      def f(l):
+         # cut off the high ells from input map
+         if (l<lMin) or (l>lMax):
+            return 0.
+         result = fC0(l) / fCtot(l)**2
+         result *= fdLnC0dLnl(l) # for shear
+         result /= 0.5
+         if not np.isfinite(result):
+            result = 0.
+         return result
+      
+      print "generate shear map"
+      shearFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
+      #
+      cosXFourier = shearFourier * (self.lx**2 - self.ly**2) / self.l**2
+      cosXFourier[np.where(np.isfinite(cosXFourier)==False)] = 0.
+      cosX = self.inverseFourier(cosXFourier)
+      #
+      cosYFourier = shearFourier * self.lx * self.ly / self.l**2
+      cosYFourier[np.where(np.isfinite(cosYFourier)==False)] = 0.
+      cosY = self.inverseFourier(cosYFourier)
+      
+      print "generate gradient map"
+      c0Fourier = self.filterFourierIsotropic(fCfgBias, dataFourier=np.ones_like(self.l), test=test)
+      # the factor i in the gradient makes the Fourier function Hermitian
+      gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
+      gradX = self.inverseFourier(gradXFourier) # extra factor of i will be cancelled later
+      gradY = self.inverseFourier(gradYFourier) # extra factor of i will be cancelled later
+
+      # various terms
+      gradXcosXFourier = self.fourier(gradX * cosX)
+      gradXcosXFourier *= (self.lx**2 - self.ly**2) / self.l**2   # for cos
+      gradXcosXFourier *= 2. * self.lx / self.l**2 / 1.j # for grad
+      gradXcosXFourier[np.where(np.isfinite(gradXcosXFourier)==False)] = 0.
+      #
+      gradYcosXFourier = self.fourier(gradY * cosX)
+      gradYcosXFourier *= (self.lx**2 - self.ly**2) / self.l**2   # for cos
+      gradYcosXFourier *= 2. * self.ly / self.l**2 / 1.j # for grad
+      gradYcosXFourier[np.where(np.isfinite(gradYcosXFourier)==False)] = 0.
+      #
+      gradXcosYFourier = self.fourier(gradX * cosY)
+      gradXcosYFourier *= 4. * self.lx * self.ly / self.l**2   # for cos
+      gradXcosYFourier *= 2. * self.lx / self.l**2 / 1.j # for grad
+      gradXcosYFourier[np.where(np.isfinite(gradXcosYFourier)==False)] = 0.
+      #
+      gradYcosYFourier = self.fourier(gradY * cosY)
+      gradYcosYFourier *= 4. * self.lx * self.ly / self.l**2   # for cos
+      gradYcosYFourier *= 2. * self.ly / self.l**2 / 1.j # for grad
+      gradYcosYFourier[np.where(np.isfinite(gradYcosYFourier)==False)] = 0.
+      if test:
+         print "showing various terms"
+         self.plotFourier(gradXcosXFourier)
+         self.plotFourier(gradYcosXFourier)
+         self.plotFourier(gradXcosYFourier)
+         self.plotFourier(gradYcosYFourier)
+
+      # sum
+      resultFourier = gradXcosXFourier + gradYcosXFourier + gradXcosYFourier + gradYcosYFourier
+      
+      # normalize with the standard normalization
+      resultFourier *= self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=False)
+      
+      resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
+      if test:
+         print "showing result"
+         self.plotFourier(resultFourier)
+      return resultFourier
+   
+
+   def forecastMultBiasLensedForegroundsShear(self, fC0, fCtot, fCfgBias, lMin=1., lMax=1.e5, test=False):
+      """Interpolates the multiplicative bias to the shear estimator
+      due to lensed foregrounds in the map
+      """
+      print "computing the multiplicative bias"
+      result = self.computeMultBiasLensedForegroundsShear(fC0, fCtot, fCfgBias, lMin=lMin, lMax=lMax, test=test)
+      # keep only the real part (the imag. part should be zero, but is tiny in practice)
+      result = np.real(result)
+      # remove the nans
+      result = np.nan_to_num(result)
+
+      # fix the issue of the wrong ell=0 value
+      # replace it by the value lx=0, ly=fundamental
+      result[0,0] = result[0,1]
+      
+      # interpolate, preserving the sign
+      lnfln = interp1d(np.log(self.l.flatten()), np.log(np.abs(result).flatten()), kind='linear', bounds_error=False, fill_value=0.)
+      signln = interp1d(np.log(self.l.flatten()), np.sign(result.flatten()), kind='linear', bounds_error=False, fill_value=0.)
+      f = lambda l: np.exp(lnfln(np.log(l))) * signln(np.log(l))
+      return f
+
+
+
+   ###############################################################################
+   ###############################################################################
+   # Noise cross-power between shear and dilation
 
 
    def computeQuadEstKappaShearDilationNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False):
@@ -2933,7 +3284,7 @@ class FlatMap(object):
 
 
       # Second, the asymmetric term
-      f = lambda l: fCfg(l)
+      f = lambda l: fCfg(l) * (l>=lMin) * (l<=lMax)
       term2CFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       term2C = self.inverseFourier(term2CFourier)
       #
@@ -2971,6 +3322,10 @@ class FlatMap(object):
       # divide by squared normalization
       resultFourier *= normalizationFourier
 
+      # remove L > 2 lMax
+      f = lambda l: (l <= 2. * lMax)
+      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
+
       return resultFourier
 
 
@@ -3000,7 +3355,7 @@ class FlatMap(object):
 
    ###############################################################################
    ###############################################################################
-   # Shear B-mode -only estimator
+   # Shear B-mode estimator
 
    def quadEstPhiShearBNonNorm(self, fC0, fCtot, lMin=5.e2, lMax=3000., dataFourier=None, dataFourier2=None, test=False):
       '''Non-normalized quadratic estimator for phi from shear B-mode only
@@ -3105,11 +3460,6 @@ class FlatMap(object):
       if test:
          print "checking the power spectrum of phi map"
          self.powerSpectrum(dataFourier=resultFourier, plot=True)
-
-#      # keep only L < lMin,
-#      # to always be in the regime L << l
-#      f = lambda l: (l<=lMin)
-#      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
 
       if test:
          print "Show real-space phi map"
@@ -3227,7 +3577,7 @@ class FlatMap(object):
 
 
       # Second, the asymmetric term
-      f = lambda l: fCfg(l)
+      f = lambda l: fCfg(l) * (l>=lMin) * (l<=lMax)
       term2bFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       term2b = self.inverseFourier(term2bFourier)
       #
@@ -3274,6 +3624,10 @@ class FlatMap(object):
       # divide by squared normalization
       resultFourier *= normalizationFourier**2
 
+      # remove L > 2 lMax
+      f = lambda l: (l <= 2. * lMax)
+      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
+
       return resultFourier
 
 
@@ -3302,7 +3656,8 @@ class FlatMap(object):
 
 
    ###############################################################################
-
+   ###############################################################################
+   # Noise cross-spectrum for Shear E and Shear B estimators
 
 
    def computeQuadEstKappaShearShearBNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False):
@@ -3374,7 +3729,7 @@ class FlatMap(object):
       f = lambda l: g(l)**2 * fCfg(l)
       term2aFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       #
-      f = lambda l: fCfg(l)
+      f = lambda l: fCfg(l) * (l>=lMin) * (l<=lMax)
       term2bFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       term2b = self.inverseFourier(term2bFourier)
 
@@ -3419,6 +3774,10 @@ class FlatMap(object):
 
       # divide by squared normalization
       resultFourier *= normalizationFourier**2
+
+      # remove L > 2 lMax
+      f = lambda l: (l <= 2. * lMax)
+      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
 
       return resultFourier
 
