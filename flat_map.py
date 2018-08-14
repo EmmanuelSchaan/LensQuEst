@@ -1330,7 +1330,6 @@ class FlatMap(object):
          dataFourier2 = dataFourier.copy()
       
       # inverse-var weighted map
-      print "computing inverse var. weighted map"
       def f(l):
          # cut off the high ells from input map
          if (l<lMin) or (l>lMax):
@@ -1348,7 +1347,6 @@ class FlatMap(object):
          self.powerSpectrum(theory=f, dataFourier=iVarDataFourier, plot=True)
 
       # Wiener-filter the map
-      print "computing WF map"
       def f(l):
          # cut off the high ells from input map
          if (l<lMin) or (l>lMax):
@@ -1368,7 +1366,6 @@ class FlatMap(object):
 
       
       # get Wiener-filtered gradient map
-      print "computing WF gradient map"
       WFDataXFourier, WFDataYFourier = self.computeGradient(dataFourier=WFDataFourier)
       WFDataX = self.inverseFourier(dataFourier=WFDataXFourier)
       WFDataY = self.inverseFourier(dataFourier=WFDataYFourier)
@@ -1386,14 +1383,12 @@ class FlatMap(object):
 
       
       # product in real space
-      print "computing product in real space"
       productDataX = iVarData * WFDataX
       productDataY = iVarData * WFDataY
       productDataXFourier = self.fourier(data=productDataX)
       productDataYFourier = self.fourier(data=productDataY)
       
       # take divergence
-      print "taking the divergence"
       divergenceDataFourier = self.computeDivergence(productDataXFourier, productDataYFourier)
       if test:
          print "showing divergence map"
@@ -2270,7 +2265,6 @@ class FlatMap(object):
          dataFourier2 = dataFourier.copy()
       
       # cut off high ells
-      print "cutting off high ells"
       f = lambda l: 1.*(l>=lMin)*(l<=lMax)
       FDataFourier = self.filterFourierIsotropic(f, dataFourier=dataFourier, test=test)
       FData = self.inverseFourier(FDataFourier)
@@ -2291,7 +2285,6 @@ class FlatMap(object):
          plt.show()
 
       # sort of Dilation Wiener-filter
-      print "computing WF map"
       def f(l):
          # cut off the high ells from input map
          if (l<lMin) or (l>lMax):
@@ -2312,7 +2305,6 @@ class FlatMap(object):
          self.powerSpectrum(dataFourier=WFDataFourier, theory=[theory], plot=True)
 
       # product in real space
-      print "computing product in real space"
       product = FData * WFData
       productFourier = self.fourier(product)
       
@@ -2366,8 +2358,7 @@ class FlatMap(object):
          if not np.isfinite(result):
             result = 0.
          return result
-         
-      print "generate Fourier map"
+      
       dataFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       
       # compute the integral
@@ -2416,11 +2407,11 @@ class FlatMap(object):
             result = 0.
          return result
       
-      print "generate dilation map"
+      # generate dilation map
       dilationFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       dilation = self.inverseFourier(dilationFourier)
       
-      print "generate gradient map"
+      # generate gradient map
       f = lambda l: fC0(l) * (l>=lMin) * (l<=lMax)
       c0Fourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       # the factor i in the gradient makes the Fourier function Hermitian
@@ -2606,11 +2597,11 @@ class FlatMap(object):
             result = 0.
          return result
       
-      print "generate dilation map"
+      # generate dilation map
       dilationFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       dilation = self.inverseFourier(dilationFourier)
       
-      print "generate gradient map"
+      # generate gradient map
       c0Fourier = self.filterFourierIsotropic(fCfgBias, dataFourier=np.ones_like(self.l), test=test)
       # the factor i in the gradient makes the Fourier function Hermitian
       gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
@@ -2680,7 +2671,6 @@ class FlatMap(object):
          dataFourier2 = dataFourier.copy()
       
       # cut off high ells
-      print "cutting off high ells"
       f = lambda l: 1.*(l>=lMin)*(l<=lMax)
       FDataFourier = self.filterFourierIsotropic(f, dataFourier=dataFourier, test=test)
       FData = self.inverseFourier(FDataFourier)
@@ -2702,7 +2692,6 @@ class FlatMap(object):
          plt.show()
 
       # sort of shear Wiener-filter
-      print "computing WF map"
       def f(l):
          # cut off the high ells from input map
          if (l<lMin) or (l>lMax):
@@ -2722,7 +2711,6 @@ class FlatMap(object):
          self.powerSpectrum(theory=[theory], dataFourier=WFDataFourier, plot=True)
       
       # multiplication by cos 2 theta_{L,l}
-      print "multipyling by cos 2 theta_{L,l}"
       #
       # term 1
       def f(lx, ly):
@@ -2802,7 +2790,6 @@ class FlatMap(object):
          plt.show()
 
       # sort of shear Wiener-filter
-      print "computing WF map"
       def f(l):
          # cut off the high ells from input map
          if l>lMax:
@@ -2862,7 +2849,7 @@ class FlatMap(object):
             result = 0.
          return result
       
-      print "generate shear map"
+      # generate shear map
       shearFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
 #      shear = self.inverseFourier(shearFourier)
       #
@@ -2874,7 +2861,7 @@ class FlatMap(object):
       cosYFourier *= np.divide(1., self.l**2, where=self.l!=0.)
       cosY = self.inverseFourier(cosYFourier)
       
-      print "generate gradient map"
+      # generate gradient map
       f = lambda l: fC0(l) * (l>=lMin) * (l<=lMax)
       c0Fourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       # the factor i in the gradient makes the Fourier function Hermitian
@@ -2910,8 +2897,9 @@ class FlatMap(object):
          self.plotFourier(gradYcosYFourier)
 
       # sum and invert
-      resultFourier = 1. / (gradXcosXFourier + gradYcosXFourier + gradXcosYFourier + gradYcosYFourier)
-      resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
+      resultFourier = gradXcosXFourier + gradYcosXFourier + gradXcosYFourier + gradYcosYFourier
+      resultFourier = np.divide(1., resultFourier, where=resultFourier!=0.)
+      
       # remove L > 2 lMax
       f = lambda l: (l <= 2. * lMax)
       resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
@@ -3114,7 +3102,7 @@ class FlatMap(object):
             result = 0.
          return result
       
-      print "generate shear map"
+      # generate shear map
       shearFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
       #
       cosXFourier = shearFourier * (self.lx**2 - self.ly**2)
@@ -3125,7 +3113,7 @@ class FlatMap(object):
       cosYFourier *= np.divide(1., self.l**2, where=self.l!=0.)
       cosY = self.inverseFourier(cosYFourier)
       
-      print "generate gradient map"
+      # generate gradient map
       c0Fourier = self.filterFourierIsotropic(fCfgBias, dataFourier=np.ones_like(self.l), test=test)
       # the factor i in the gradient makes the Fourier function Hermitian
       gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
@@ -3367,7 +3355,6 @@ class FlatMap(object):
          dataFourier2 = dataFourier.copy()
       
       # cut off high ells
-      print "cutting off high ells"
       f = lambda l: 1.*(l>=lMin)*(l<=lMax)
       FDataFourier = self.filterFourierIsotropic(f, dataFourier=dataFourier, test=test)
       FData = self.inverseFourier(FDataFourier)
@@ -3389,7 +3376,6 @@ class FlatMap(object):
          plt.show()
 
       # sort of shear Wiener-filter
-      print "computing WF map"
       def f(l):
          # cut off the high ells from input map
          if (l<lMin) or (l>lMax):
@@ -3409,7 +3395,6 @@ class FlatMap(object):
          self.powerSpectrum(theory=[theory], dataFourier=WFDataFourier, plot=True)
       
       # multiplication by sin 2 theta_{L,l}
-      print "multipyling by sin 2 theta_{L,l}"
       
       def fDiff(lx, ly):
          l2 = lx**2 + ly**2
