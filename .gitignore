@@ -1,1 +1,10 @@
+# Mac OS generated files
+.DS_Store
+.DS_Store?
+
+# python compiled files
 *.pyc
+
+# all output files
+#output/
+figures/
