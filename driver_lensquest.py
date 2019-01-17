@@ -84,7 +84,7 @@ fNsCmb_fft = baseMap.forecastN0KappaShear(cmb.funlensedTT, cmb.fCtotal, lMin=lMi
 #print "- shear B-mode estimator"
 #fNsBCmb_fft = baseMap.forecastN0KappaShearB(cmb.funlensedTT, cmb.fCtotal, lMin=lMin, lMax=lMax, corr=True, test=False)
 #print "- shear E x magnification"
-#fNsdCmb_fft = baseMap.forecastN0KappaShearDilation(cmb.funlensedTT, cmb.fCtotal, lMin=lMin, lMax=lMax, corr=True, test=False)
+#fNsdCmb_fft = baseMap.forecastN0KappaShearDilation(cmb.funlensedTT, cmb.fCtotal, lMin=lMin, lMaxS=lMax, lMaxD=lMax, corr=True, test=False)
 #print "- shear E x shear B. Not yet working."
 #fNssBCmb_fft = baseMap.forecastN0KappaShearShearB(cmb.funlensedTT, cmb.fCtotal, lMin=lMin, lMax=lMax, corr=True, test=False)
 

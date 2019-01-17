@@ -3340,6 +3340,10 @@ class FlatMap(object):
       lMaxS: maximum temperature multipole used in the shear estimator
       lMaxD: maximum temperature multipole used in the dilation estimator
       """
+      # One can only form the cross-correlation for lensing modes < 2*lMax,
+      # where lMax = min(lMaxS, lMaxD).
+      lMax = min(lMaxS, lMaxD)
+      
       print "computing the reconstruction noise"
       n0Kappa = self.computeQuadEstKappaShearDilationNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMaxS=lMaxS, lMaxD=lMaxD, corr=corr, test=test)
       # keep only the real part (the imag. part should be zero, but is tiny in practice)
