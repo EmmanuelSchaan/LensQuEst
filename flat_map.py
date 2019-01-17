@@ -3205,12 +3205,17 @@ class FlatMap(object):
    # Noise cross-power between shear and dilation
 
 
-   def computeQuadEstKappaShearDilationNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False):
+   def computeQuadEstKappaShearDilationNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxD=1.e5, corr=True, test=False):
       """Computes the lensing noise cross-spectrum N_L^{kappa_shear * kappa_dilation}
       between the shear and the dilation estimators.
+      lMaxS: maximum temperature multipole used in the shear estimator
+      lMaxD: maximum temperature multipole used in the dilation estimator
       """
       if fCfg is None:
          fCfg = fCtot
+      
+      # Numerator: keep the minimum lMax
+      lMax = min(lMaxS, lMaxD)
       
       def fdLnC0dLnl(l):
          e = 0.01
@@ -3313,11 +3318,11 @@ class FlatMap(object):
 
       # compute normalization
       if corr:
-         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
-         normalizationFourier *= self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxS, test=test)
+         normalizationFourier *= self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxD, test=test)
       else:
-         normalizationFourier = self.computeQuadEstPhiShearNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
-         normalizationFourier = self.computeQuadEstPhiDilationNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+         normalizationFourier = self.computeQuadEstPhiShearNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMaxS, test=test)
+         normalizationFourier = self.computeQuadEstPhiDilationNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMaxD, test=test)
 
       # divide by squared normalization
       resultFourier *= normalizationFourier
@@ -3329,12 +3334,14 @@ class FlatMap(object):
       return resultFourier
 
 
-   def forecastN0KappaShearDilation(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False):
+   def forecastN0KappaShearDilation(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxD=1.e5, corr=True, test=False):
       """Interpolates the result for N_L^{kappa_shear * kappa_dilation} = f(l),
       to be used for forecasts on lensing reconstruction.
+      lMaxS: maximum temperature multipole used in the shear estimator
+      lMaxD: maximum temperature multipole used in the dilation estimator
       """
       print "computing the reconstruction noise"
-      n0Kappa = self.computeQuadEstKappaShearDilationNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMax=lMax, corr=corr, test=test)
+      n0Kappa = self.computeQuadEstKappaShearDilationNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMaxS=lMaxS, lMaxD=lMaxD, corr=corr, test=test)
       # keep only the real part (the imag. part should be zero, but is tiny in practice)
       n0Kappa = np.real(n0Kappa)
       # remove the nans
@@ -3354,6 +3361,7 @@ class FlatMap(object):
 #      lnfln = interp1d(np.log(self.l.flatten()), np.log(n0Kappa.flatten()), kind='linear', bounds_error=False, fill_value=0.)
       f = lambda l: np.exp(lnfln(np.log(l)))
       return f
+
 
 
 
