@@ -3350,8 +3350,6 @@ class FlatMap(object):
       n0Kappa = np.real(n0Kappa)
       # remove the nans
       n0Kappa = np.nan_to_num(n0Kappa)
-      # make sure every value is positive
-      n0Kappa = np.abs(n0Kappa)
       
       # fix the issue of the wrong ell=0 value
       # replace it by the value lx=0, ly=fundamental
