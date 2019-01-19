@@ -3359,9 +3359,9 @@ class FlatMap(object):
       where = (self.l.flatten()>0.)*(self.l.flatten()<2.*lMax)
       L = self.l.flatten()[where]
       N = n0Kappa.flatten()[where]
-      lnfln = interp1d(np.log(L), np.log(N), kind='linear', bounds_error=False, fill_value=np.inf)
-#      lnfln = interp1d(np.log(self.l.flatten()), np.log(n0Kappa.flatten()), kind='linear', bounds_error=False, fill_value=0.)
-      f = lambda l: np.exp(lnfln(np.log(l)))
+      lnfln = interp1d(np.log(L), np.log(np.abs(N)), kind='linear', bounds_error=False, fill_value=np.inf)
+      sgnfln = interp1d(np.log(L), np.sign(N), kind='linear', bounds_error=False, fill_value=np.inf)
+      f = lambda l: np.exp(lnfln(np.log(l))) * sgnfln(np.log(l))
       return f
 
 
