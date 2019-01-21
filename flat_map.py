@@ -2232,9 +2232,9 @@ class FlatMap(object):
    def computeQuadEstKappaAutoCorrectionMap(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None, path=None, test=False):
       """This is the magic map m_L, such that when binned in L-annuli,
       it gives the correction to the kappa auto-spectrum,
-      which subtracts the auto-only terms that cause the N0
+      i.e. it subtracts the auto-only terms that cause the N0
       and the secondary foreground biases.
-      To use: take the auto-spectrum, then subtract to the auto-spectrum of the kappa QE.
+      To use: take the auto-spectrum, then subtract m_L to the auto-spectrum of the kappa QE.
       """
       # non-normalized phi inverse normalization map
       resultFourier = self.computeQuadEstPhiInverseDataNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, dataFourier=dataFourier, test=test)
@@ -2809,7 +2809,7 @@ class FlatMap(object):
       # sort of shear Wiener-filter
       def f(l):
          # cut off the high ells from input map
-         if l>lMax:
+         if l<lMin or l>lMax:
             return 0.
          result = fC0(l) / fCtot(l)
          result *= fdLnC0dLnl(l) # for shear
@@ -2868,7 +2868,6 @@ class FlatMap(object):
       
       # generate shear map
       shearFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
-#      shear = self.inverseFourier(shearFourier)
       #
       cosXFourier = shearFourier * (self.lx**2 - self.ly**2) / self.l**2
       cosXFourier[np.where(np.isfinite(cosXFourier)==False)] = 0.
@@ -2918,7 +2917,7 @@ class FlatMap(object):
       resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
       
       # remove L > 2 lMax
-      f = lambda l: (l <= 2. * lMax)
+      f = lambda l: (l<=2.*lMax)
       resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
       if test:
          print "showing result"
@@ -3350,7 +3349,7 @@ class FlatMap(object):
       n0Kappa = np.real(n0Kappa)
       # remove the nans
       n0Kappa = np.nan_to_num(n0Kappa)
-      
+
       # fix the issue of the wrong ell=0 value
       # replace it by the value lx=0, ly=fundamental
       n0Kappa[0,0] = n0Kappa[0,1]
@@ -3363,7 +3362,6 @@ class FlatMap(object):
       sgnfln = interp1d(np.log(L), np.sign(N), kind='linear', bounds_error=False, fill_value=np.inf)
       f = lambda l: np.exp(lnfln(np.log(l))) * sgnfln(np.log(l))
       return f
-
 
 
 
@@ -3677,13 +3675,16 @@ class FlatMap(object):
    #!!! Not working: gives weird results, that are not independent of the direction of L.
 
 
-   def computeQuadEstKappaShearShearBNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False):
+   def computeQuadEstKappaShearShearBNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxSB=1.e5, corr=True, test=False):
       """Computes the lensing noise power spectrum N_L^kappa
       for the shear B-mode estimator.
       !!! Not working: gives weird results, that are not independent of the direction of L.
       """
       if fCfg is None:
          fCfg = fCtot
+      
+      # Numerator: keep the minimum lMax
+      lMax = min(lMaxS, lMaxSB)
       
       def fdLnC0dLnl(l):
          e = 0.01
@@ -3785,12 +3786,21 @@ class FlatMap(object):
 
       # compute normalization: same for shear and shear B
       if corr:
-         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxS, test=test)
+         if lMaxS==lMaxSB:
+            normalizationFourier *= normalizationFourier
+         else:
+            normalizationFourier *= self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxSB, test=test)
+      
       else:
-         normalizationFourier = self.computeQuadEstPhiShearNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+         normalizationFourier = self.computeQuadEstPhiShearNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMaxS, test=test)
+         if lMaxS==lMaxSB:
+            normalizationFourier *= normalizationFourier
+         else:
+            normalizationFourier *= self.computeQuadEstPhiShearNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMaxSB, test=test)
 
       # divide by squared normalization
-      resultFourier *= normalizationFourier**2
+      resultFourier *= normalizationFourier
 
       # remove L > 2 lMax
       f = lambda l: (l <= 2. * lMax)
