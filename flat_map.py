@@ -3810,12 +3810,15 @@ class FlatMap(object):
 
 
 
-   def forecastN0KappaShearShearB(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False):
+   def forecastN0KappaShearShearB(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxSB=1.e5, corr=True, test=False):
       """Interpolates the result for N_L^{kappa_shear * kappa_shearB} = f(l),
       to be used for forecasts on lensing reconstruction.
       """
+      # One can only form the cross-correlation for lensing modes < 2*lMax,
+      # where lMax = min(lMaxS, lMaxD).
+      lMax = min(lMaxS, lMaxSB)
       print "computing the reconstruction noise"
-      n0Kappa = self.computeQuadEstKappaShearShearBNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMax=lMax, corr=corr, test=test)
+      n0Kappa = self.computeQuadEstKappaShearShearBNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMaxS=lMaxS, lMaxSB=lMaxSB, corr=corr, test=test)
       # keep only the real part (the imag. part should be zero, but is tiny in practice)
       n0Kappa = np.real(n0Kappa)
       # remove the nans
