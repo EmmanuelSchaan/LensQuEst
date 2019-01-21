@@ -460,8 +460,10 @@ class FlatMap(object):
          fig=plt.figure(0)
          ax=fig.add_subplot(111)
          #
-         ax.errorbar(lCen, factor*Cl, yerr=factor*sCl, c='b', fmt='.')
-         ax.errorbar(lCen, -factor*Cl, yerr=factor*sCl, c='r', fmt='.')
+         Ipos = np.where(Cl>=0.)
+         Ineg = np.where(Cl<0.)
+         ax.errorbar(lCen[Ipos], factor*Cl[Ipos], yerr=factor*sCl[Ipos], c='b', fmt='.')
+         ax.errorbar(lCen[Ineg], -factor*Cl[Ineg], yerr=factor*sCl[Ineg], c='r', fmt='.')
          #
          for f in theory:
             L = np.logspace(np.log10(1.), np.log10(np.max(ell)), 201, 10.)
