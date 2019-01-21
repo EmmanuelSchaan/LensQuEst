@@ -447,6 +447,9 @@ class FlatMap(object):
          sCl = Cl*np.sqrt(2)
       else:
          sCl = np.array(map(fsCl, lCen))
+      # In case of a cross-correlation, Cl may be negative.
+      # the absolute value is then still some estimate of the error bar
+      sCl = np.abs(sCl)
       sCl /= np.sqrt(Nmodes)
       sCl = np.nan_to_num(sCl)
       
@@ -2772,11 +2775,6 @@ class FlatMap(object):
       if test:
          print "checking the power spectrum of phi map"
          self.powerSpectrum(dataFourier=resultFourier, plot=True)
-
-#      # keep only L < lMin,
-#      # to always be in the regime L << l
-#      f = lambda l: (l<=lMin)
-#      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
 
       if test:
          print "Show real-space phi map"
