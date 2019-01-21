@@ -451,7 +451,7 @@ class FlatMap(object):
       # the absolute value is then still some estimate of the error bar
       sCl = np.abs(sCl)
       sCl /= np.sqrt(Nmodes)
-      sCl = np.nan_to_num(sCl)
+      sCl[np.where(np.isfinite(sCl)==False)] = 0.
       
       
       if plot:
@@ -460,8 +460,8 @@ class FlatMap(object):
          fig=plt.figure(0)
          ax=fig.add_subplot(111)
          #
-         ax.errorbar(lCen, factor*Cl, yerr=factor* sCl, c='b', fmt='.')
-         ax.errorbar(lCen, -factor*Cl, yerr=factor* sCl, c='r', fmt='.')
+         ax.errorbar(lCen, factor*Cl, yerr=factor*sCl, c='b', fmt='.')
+         ax.errorbar(lCen, -factor*Cl, yerr=factor*sCl, c='r', fmt='.')
          #
          for f in theory:
             L = np.logspace(np.log10(1.), np.log10(np.max(ell)), 201, 10.)
