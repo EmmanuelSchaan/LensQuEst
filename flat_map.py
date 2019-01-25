@@ -1490,130 +1490,154 @@ class FlatMap(object):
       return result
 
 
-   def computeQuadEstPhiNormalizationFFT(self, fC0, fCtot, lMin=1., lMax=1.e5, test=False):
+
+   def computeQuadEstPhiNormalizationFFT(self, fC0, fCtot, lMin=1., lMax=1.e5, test=False, cache=None):
       """the normalization is N_l^phiphi,
-      Works great, and super fast!
+      Works great, and super fast.
       """
-      # inverse-var weighted map
-      def f(l):
-         if (l<lMin) or (l>lMax):
-            return 0.
-         result = 1./fCtot(l)
-         if not np.isfinite(result):
-            result = 0.
-         return result
-      iVarFourier = np.array(map(f, self.l.flatten()))
-      iVarFourier = iVarFourier.reshape(self.l.shape)
-      iVar = self.inverseFourier(dataFourier=iVarFourier)
+   
+      # Actual calculation
+      def doCalculation():
+         # inverse-var weighted map
+         def f(l):
+            if (l<lMin) or (l>lMax):
+               return 0.
+            result = 1./fCtot(l)
+            if not np.isfinite(result):
+               result = 0.
+            return result
+         iVarFourier = np.array(map(f, self.l.flatten()))
+         iVarFourier = iVarFourier.reshape(self.l.shape)
+         iVar = self.inverseFourier(dataFourier=iVarFourier)
 
-      # C map
-      def f(l):
-         if (l<lMin) or (l>lMax):
-            return 0.
-         result = fC0(l)**2/fCtot(l)
-         if not np.isfinite(result):
-            result = 0.
-         return result
-      CFourier = np.array(map(f, self.l.flatten()))
-      CFourier = CFourier.reshape(self.l.shape)
+         # C map
+         def f(l):
+            if (l<lMin) or (l>lMax):
+               return 0.
+            result = fC0(l)**2/fCtot(l)
+            if not np.isfinite(result):
+               result = 0.
+            return result
+         CFourier = np.array(map(f, self.l.flatten()))
+         CFourier = CFourier.reshape(self.l.shape)
 
-      # term 1x
-      term1x = self.inverseFourier(dataFourier= self.lx**2 * CFourier)
-      term1x *= iVar
-      term1xFourier = self.fourier(data=term1x)
-      term1xFourier *= self.lx**2
-      #
-      # term 1y
-      term1y = self.inverseFourier(dataFourier= self.ly**2 * CFourier)
-      term1y *= iVar
-      term1yFourier = self.fourier(data=term1y)
-      term1yFourier *= self.ly**2
-      #
-      # term 1xy
-      term1xy = self.inverseFourier(dataFourier= 2. * self.lx * self.ly * CFourier)
-      term1xy *= iVar
-      term1xyFourier = self.fourier(data=term1xy)
-      term1xyFourier *= self.lx * self.ly
+         # term 1x
+         term1x = self.inverseFourier(dataFourier= self.lx**2 * CFourier)
+         term1x *= iVar
+         term1xFourier = self.fourier(data=term1x)
+         term1xFourier *= self.lx**2
+         #
+         # term 1y
+         term1y = self.inverseFourier(dataFourier= self.ly**2 * CFourier)
+         term1y *= iVar
+         term1yFourier = self.fourier(data=term1y)
+         term1yFourier *= self.ly**2
+         #
+         # term 1xy
+         term1xy = self.inverseFourier(dataFourier= 2. * self.lx * self.ly * CFourier)
+         term1xy *= iVar
+         term1xyFourier = self.fourier(data=term1xy)
+         term1xyFourier *= self.lx * self.ly
+         
+         if test:
+            self.plotFourier(term1xFourier)
+            self.plotFourier(term1yFourier)
+            self.plotFourier(term1xyFourier)
+            self.plotFourier(term1xFourier+term1yFourier+term1xyFourier)
+         
+
+         # WF map
+         def f(l):
+            if (l<lMin) or (l>lMax):
+               return 0.
+            result = fC0(l)/fCtot(l)
+            # artificial factor of i such that f(-l) = f(l)*,
+            # such that f(x) is real
+            result *= 1.j
+            if not np.isfinite(result):
+               result = 0.
+            return result
+         WFFourier = np.array(map(f, self.l.flatten()))
+         WFFourier = WFFourier.reshape(self.l.shape)
+
+         # term 2
+         term2_x = self.inverseFourier(dataFourier= self.lx * WFFourier)
+         term2_y = self.inverseFourier(dataFourier= self.ly * WFFourier)
+         #
+         # term 2x
+         term2x = term2_x**2
+         term2xFourier = self.fourier(data=term2x)
+         term2xFourier *= self.lx**2
+         # minus sign to correct the artificial i**2
+         term2xFourier *= -1.
+         #
+         # term 2y
+         term2y = term2_y**2
+         term2yFourier = self.fourier(data=term2y)
+         term2yFourier *= self.ly**2
+         # minus sign to correct the artificial i**2
+         term2yFourier *= -1.
+         #
+         # term 2xy
+         term2xy = 2. * term2_x * term2_y
+         term2xyFourier = self.fourier(data=term2xy)
+         term2xyFourier *= self.lx * self.ly
+         # minus sign to correct the artificial i**2
+         term2xyFourier *= -1.
+
+         if test:
+            self.plotFourier(term2xFourier)
+            self.plotFourier(term2yFourier)
+            self.plotFourier(term2xyFourier)
+            self.plotFourier(term2xFourier+term2yFourier+term2xyFourier)
+
+         # add all terms
+         resultFourier = term1xFourier + term1yFourier + term1xyFourier
+         resultFourier += term2xFourier + term2yFourier + term2xyFourier
+
+         # cut off the high ells from phi normalization map
+         f = lambda l: (l<=2.*lMax)
+         resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=False)
+
+         # invert
+         resultFourier = 1./resultFourier
+         resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
+
+         if test:
+            plt.loglog(self.l.flatten(), resultFourier.flatten(), 'b.')
+            plt.show()
       
-      if test:
-         self.plotFourier(term1xFourier)
-         self.plotFourier(term1yFourier)
-         self.plotFourier(term1xyFourier)
-         self.plotFourier(term1xFourier+term1yFourier+term1xyFourier)
-      
+         return resultFourier
 
-      # WF map
-      def f(l):
-         if (l<lMin) or (l>lMax):
-            return 0.
-         result = fC0(l)/fCtot(l)
-         # artificial factor of i such that f(-l) = f(l)*,
-         # such that f(x) is real
-         result *= 1.j
-         if not np.isfinite(result):
-            result = 0.
-         return result
-      WFFourier = np.array(map(f, self.l.flatten()))
-      WFFourier = WFFourier.reshape(self.l.shape)
-
-      # term 2
-      term2_x = self.inverseFourier(dataFourier= self.lx * WFFourier)
-      term2_y = self.inverseFourier(dataFourier= self.ly * WFFourier)
-      #
-      # term 2x
-      term2x = term2_x**2
-      term2xFourier = self.fourier(data=term2x)
-      term2xFourier *= self.lx**2
-      # minus sign to correct the artificial i**2
-      term2xFourier *= -1.
-      #
-      # term 2y
-      term2y = term2_y**2
-      term2yFourier = self.fourier(data=term2y)
-      term2yFourier *= self.ly**2
-      # minus sign to correct the artificial i**2
-      term2yFourier *= -1.
-      #
-      # term 2xy
-      term2xy = 2. * term2_x * term2_y
-      term2xyFourier = self.fourier(data=term2xy)
-      term2xyFourier *= self.lx * self.ly
-      # minus sign to correct the artificial i**2
-      term2xyFourier *= -1.
-
-      if test:
-         self.plotFourier(term2xFourier)
-         self.plotFourier(term2yFourier)
-         self.plotFourier(term2xyFourier)
-         self.plotFourier(term2xFourier+term2yFourier+term2xyFourier)
-
-      # add all terms
-      result = term1xFourier + term1yFourier + term1xyFourier
-      result += term2xFourier + term2yFourier + term2xyFourier
-
-      # cut off the high ells from phi normalization map
-      f = lambda l: (l<=2.*lMax)
-      result = self.filterFourierIsotropic(f, dataFourier=result, test=False)
-
-      # invert
-      result = 1./result
-      result[np.where(np.isfinite(result)==False)] = 0.
-
-      if test:
-         plt.loglog(self.l.flatten(), result.flatten(), 'b.')
-         plt.show()
-
-      return result
+      # Caching boiler plate
+      # if no caching is desired, just compute
+      if cache is None:
+         resultFourier = doCalculation()
+      # if caching is desired
+      else:
+         # if first call with caching, set up the cache dictionary
+         if not hasattr(self.computeQuadEstPhiNormalizationFFT.__func__, "cache"):
+            self.computeQuadEstPhiNormalizationFFT.__func__.cache = {}
+         # if the calculation has been done before
+         if self.computeQuadEstPhiNormalizationFFT.cache.has_key(cache):
+            resultFourier = self.computeQuadEstPhiNormalizationFFT.cache[cache]
+         # if this calculation was not done before
+         else:
+            resultFourier = doCalculation()
+            self.computeQuadEstPhiNormalizationFFT.cache[cache] = resultFourier
 
 
-   def forecastN0Kappa(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, test=False):
+      return resultFourier
+
+
+   def forecastN0Kappa(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, test=False, cache=None):
       """Interpolates the result for N_L^kappa = f(L),
       to be used for forecasts on lensing reconstruction
       """
       print "computing the reconstruction noise"
       # Standard reconstruction noise
       if fCfg is None:
-         n0Phi = self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+         n0Phi = self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test, cache=cache)
       # Gaussian noise contribution from the foregrounds only
       else:
          n0Phi = self.computeQuadEstPhiNormalizationFgNoiseFFT(fC0, fCtot, fCfg, lMin=lMin, lMax=lMax, test=test)
@@ -1641,7 +1665,7 @@ class FlatMap(object):
    
    
    
-   def computeQuadEstKappaNorm(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None, dataFourier2=None, path=None, test=False):
+   def computeQuadEstKappaNorm(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None, dataFourier2=None, path=None, test=False, cache=None):
       '''Returns the normalized quadratic estimator for kappa in Fourier space,
       and saves it to file if needed.
       '''
@@ -1650,7 +1674,7 @@ class FlatMap(object):
       # convert from phi to kappa
       resultFourier = self.kappaFromPhi(resultFourier)
       # compute normalization
-      normalizationFourier = self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+      normalizationFourier = self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test, cache=cache)
       # normalized (not mean field-subtracted) QE for kappa
       resultFourier *= normalizationFourier
       # save to file if needed
@@ -1665,7 +1689,7 @@ class FlatMap(object):
    # Gaussian N0 term from foregrounds in the CMB map
    
    
-   def computeQuadEstPhiNormalizationFgNoiseFFT(self, fC0, fCtot, fCfg, lMin=1., lMax=1.e5, test=False):
+   def computeQuadEstPhiNormalizationFgNoiseFFT(self, fC0, fCtot, fCfg, lMin=1., lMax=1.e5, test=False, cache=None):
       """Computes the N^{0 fg phiphi}_L due to foreground power in the temperature map
       N^{0 fg phiphi}_L = N^{0 phiphi}_L^2 * integral.
       """
@@ -1774,7 +1798,7 @@ class FlatMap(object):
       result = self.filterFourierIsotropic(f, dataFourier=result, test=False)
 
       # normalize by the standard N0 squared
-      result *= self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=False)**2
+      result *= self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=False, cache=cache)**2
       
       # clean up
       result[np.where(np.isfinite(result)==False)] = 0.
@@ -1790,7 +1814,7 @@ class FlatMap(object):
    ###############################################################################
    # Lensing multiplicative bias from lensed foregrounds
 
-   def computeMultBiasLensedForegrounds(self, fC0, fCtot, fCfgBias, lMin=1., lMax=1.e5, test=False):
+   def computeMultBiasLensedForegrounds(self, fC0, fCtot, fCfgBias, lMin=1., lMax=1.e5, test=False, cache=None):
       """Multiplicative bias to CMB lensing
       from lensed foregrounds in the CMB map.
       fCfgBias: unlensed foreground power spectrum.
@@ -1917,7 +1941,7 @@ class FlatMap(object):
       result = self.filterFourierIsotropic(f, dataFourier=result, test=False)
 
       # normalize by the standard N0
-      result *= self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=False)
+      result *= self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=False, cache=cache)
       result[np.where(np.isfinite(result)==False)] = 0.
 
       if test:
@@ -1956,7 +1980,7 @@ class FlatMap(object):
    # Converting a map trispectrum into a non-Gaussian N_L^kappa
    
    
-   def computeConversionTrispecToNoisePhi(self, fC0, fCtot, lMin=1., lMax=1.e5, test=False):
+   def computeConversionTrispecToNoisePhi(self, fC0, fCtot, lMin=1., lMax=1.e5, test=False, cache=None):
       """Computes conversion factor, such that:
       N_L^phi = Gaussian + (conversion factor) * (white trispectrum of temperature map)
       The conversion factor has units of 1/C_l^2 (omitting radians)
@@ -2025,7 +2049,7 @@ class FlatMap(object):
       resultFourier = np.abs(resultFourier)**2
 
       # normalize by the squared Gaussian N0
-      n0GFourier = self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=False)
+      n0GFourier = self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=False, cache=cache)
       n0GFourier = np.abs(n0GFourier)**2
       resultFourier *= n0GFourier
 
@@ -2234,7 +2258,7 @@ class FlatMap(object):
 
 
 
-   def computeQuadEstKappaAutoCorrectionMap(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None, path=None, test=False):
+   def computeQuadEstKappaAutoCorrectionMap(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None, path=None, test=False, cache=None):
       """This is the magic map m_L, such that when binned in L-annuli,
       it gives the correction to the kappa auto-spectrum,
       i.e. it subtracts the auto-only terms that cause the N0
@@ -2248,7 +2272,7 @@ class FlatMap(object):
       # do it again, since this is effectively a "power spectrum map"
       resultFourier = self.kappaFromPhi(resultFourier)
       # compute normalization
-      normalizationFourier = self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+      normalizationFourier = self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test, cache=cache)
       # normalized correction for QE kappa auto-spectrum correction map
       resultFourier *= normalizationFourier**2
 #!!!!!!!!! weird factor needed. I haven't figured out why
@@ -2395,108 +2419,132 @@ class FlatMap(object):
       return resultFourier
 
 
-   def computeQuadEstPhiDilationNormalizationCorrectedFFT(self, fC0, fCtot, fC0wg=None, lMin=5.e2, lMax=3.e3, test=False):
+   def computeQuadEstPhiDilationNormalizationCorrectedFFT(self, fC0, fCtot, fC0wg=None, lMin=5.e2, lMax=3.e3, test=False, cache=None):
       """Multiplicative normalization for phi estimator from dilation only,
       computed with FFT.
       This normalization corrects for the multiplicative bias in the estimator.
       C0wg: a hypothetical wiggle-only or no-wiggle unlensed CMB power spectrum.
       """
+      
       if fC0wg is None:
          fC0wg = fC0
       
-      def fdLnl2C0dLnl(l):
-         e = 0.01
-         lup = l*(1.+e)
-         ldown = l*(1.-e)
-         result = lup**2 * fC0wg(lup)
-         result /= ldown**2 * fC0wg(ldown)
-         result = np.log(result) / (2.*e)
-         return result
+      def doCalculation():
+         
+         def fdLnl2C0dLnl(l):
+            e = 0.01
+            lup = l*(1.+e)
+            ldown = l*(1.-e)
+            result = lup**2 * fC0wg(lup)
+            result /= ldown**2 * fC0wg(ldown)
+            result = np.log(result) / (2.*e)
+            return result
 
-      def fDilation(l):
-         # cut off the high ells from input map
-         if (l<lMin) or (l>lMax):
-            return 0.
-         result = fC0wg(l) / fCtot(l)**2
-         result *= fdLnl2C0dLnl(l) # for isotropic dilation
-         result /= 0.5
-         if not np.isfinite(result):
-            result = 0.
-         return result
+         def fDilation(l):
+            # cut off the high ells from input map
+            if (l<lMin) or (l>lMax):
+               return 0.
+            result = fC0wg(l) / fCtot(l)**2
+            result *= fdLnl2C0dLnl(l) # for isotropic dilation
+            result /= 0.5
+            if not np.isfinite(result):
+               result = 0.
+            return result
 
-      # generate dilation map
-      dilationFourier = self.filterFourierIsotropic(fDilation, dataFourier=np.ones_like(self.l), test=test)
-      dilation = self.inverseFourier(dilationFourier)
-      
-      # generate gradient C0 map
-      f = lambda l: fC0(l) * (l>=lMin) * (l<=lMax)
-      c0Fourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
-      # the factor i in the gradient makes the Fourier function Hermitian
-      gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
-      gradX = self.inverseFourier(gradXFourier) # extra factor of i will be cancelled later
-      gradY = self.inverseFourier(gradYFourier) # extra factor of i will be cancelled later
+         # generate dilation map
+         dilationFourier = self.filterFourierIsotropic(fDilation, dataFourier=np.ones_like(self.l), test=test)
+         dilation = self.inverseFourier(dilationFourier)
+         
+         # generate gradient C0 map
+         f = lambda l: fC0(l) * (l>=lMin) * (l<=lMax)
+         c0Fourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
+         # the factor i in the gradient makes the Fourier function Hermitian
+         gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
+         gradX = self.inverseFourier(gradXFourier) # extra factor of i will be cancelled later
+         gradY = self.inverseFourier(gradYFourier) # extra factor of i will be cancelled later
 
-      # generate ell limit map
-      f = lambda l: (l>=lMin) * (l<=lMax)
-      ellLimitsFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
-      ellLimits = self.inverseFourier(ellLimitsFourier)
+         # generate ell limit map
+         f = lambda l: (l>=lMin) * (l<=lMax)
+         ellLimitsFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
+         ellLimits = self.inverseFourier(ellLimitsFourier)
 
 
-      # First, the asymmetric term
-      # term1x
-      term1XFourier = self.fourier(gradX * dilation)
-      term1XFourier *= 2. * self.lx / self.l**2 / 1.j # factor of i to cancel the one in the gradient
-      term1XFourier[np.where(np.isfinite(term1XFourier)==False)] = 0.
-      # term1y
-      term1YFourier = self.fourier(gradY * dilation)
-      term1YFourier *= 2. * self.ly / self.l**2 / 1.j # factor of i to cancel the one in the gradient
-      term1YFourier[np.where(np.isfinite(term1YFourier)==False)] = 0.
-      # sum
-      term1Fourier = term1XFourier + term1YFourier
-      if test:
-         print "showing term1XFourier"
-         self.plotFourier(term1XFourier)
-         print "showing term1YFourier"
-         self.plotFourier(term1YFourier)
-         print "showing term1Fourier"
-         self.plotFourier(term1Fourier)
-      
-      
-      # Second, the symmetric term
-      # term2x
-      term2X = self.inverseFourier(gradXFourier * dilationFourier)
-      term2XFourier = self.fourier(term2X * ellLimits)
-      term2XFourier *= 2. * self.lx / self.l**2 / 1.j # factor of i to cancel the one in the gradient
-      term2XFourier[np.where(np.isfinite(term2XFourier)==False)] = 0.
-      # term2y
-      term2Y = self.inverseFourier(gradYFourier * dilationFourier)
-      term2YFourier = self.fourier(term2Y * ellLimits)
-      term2YFourier *= 2. * self.ly / self.l**2 / 1.j # factor of i to cancel the one in the gradient
-      term2YFourier[np.where(np.isfinite(term2XFourier)==False)] = 0.
-      # sum
-      term2Fourier = term2XFourier + term2YFourier
-      if test:
-         print "showing term2XFourier"
-         self.plotFourier(term2XFourier)
-         print "showing term2YFourier"
-         self.plotFourier(term2YFourier)
-         print "showing term2Fourier"
-         self.plotFourier(term2Fourier)
+         # First, the asymmetric term
+         # term1x
+         term1XFourier = self.fourier(gradX * dilation)
+         term1XFourier *= 2. * self.lx / self.l**2 / 1.j # factor of i to cancel the one in the gradient
+         term1XFourier[np.where(np.isfinite(term1XFourier)==False)] = 0.
+         # term1y
+         term1YFourier = self.fourier(gradY * dilation)
+         term1YFourier *= 2. * self.ly / self.l**2 / 1.j # factor of i to cancel the one in the gradient
+         term1YFourier[np.where(np.isfinite(term1YFourier)==False)] = 0.
+         # sum
+         term1Fourier = term1XFourier + term1YFourier
+         if test:
+            print "showing term1XFourier"
+            self.plotFourier(term1XFourier)
+            print "showing term1YFourier"
+            self.plotFourier(term1YFourier)
+            print "showing term1Fourier"
+            self.plotFourier(term1Fourier)
+         
+         
+         # Second, the symmetric term
+         # term2x
+         term2X = self.inverseFourier(gradXFourier * dilationFourier)
+         term2XFourier = self.fourier(term2X * ellLimits)
+         term2XFourier *= 2. * self.lx / self.l**2 / 1.j # factor of i to cancel the one in the gradient
+         term2XFourier[np.where(np.isfinite(term2XFourier)==False)] = 0.
+         # term2y
+         term2Y = self.inverseFourier(gradYFourier * dilationFourier)
+         term2YFourier = self.fourier(term2Y * ellLimits)
+         term2YFourier *= 2. * self.ly / self.l**2 / 1.j # factor of i to cancel the one in the gradient
+         term2YFourier[np.where(np.isfinite(term2XFourier)==False)] = 0.
+         # sum
+         term2Fourier = term2XFourier + term2YFourier
+         if test:
+            print "showing term2XFourier"
+            self.plotFourier(term2XFourier)
+            print "showing term2YFourier"
+            self.plotFourier(term2YFourier)
+            print "showing term2Fourier"
+            self.plotFourier(term2Fourier)
 
-      # sum and invert
-      resultFourier = 1. / (term1Fourier + term2Fourier)
-      resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
-      # remove L > 2 lMax
-      f = lambda l: (l <= 2. * lMax)
-      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
-      if test:
-         print "showing sum"
-         self.plotFourier(resultFourier)
-      
+         # sum and invert
+         resultFourier = 1. / (term1Fourier + term2Fourier)
+         resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
+         # remove L > 2 lMax
+         f = lambda l: (l <= 2. * lMax)
+         resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
+         if test:
+            print "showing sum"
+            self.plotFourier(resultFourier)
+         
+         return resultFourier
+
+
+      # Caching boiler plate
+      # if no caching is desired, just compute
+      if cache is None:
+         resultFourier = doCalculation()
+      # if caching is desired
+      else:
+         # if first call with caching, set up the cache dictionary
+         if not hasattr(self.computeQuadEstPhiDilationNormalizationCorrectedFFT.__func__, "cache"):
+            self.computeQuadEstPhiDilationNormalizationCorrectedFFT.__func__.cache = {}
+         # if the calculation has been done before
+         if self.computeQuadEstPhiDilationNormalizationCorrectedFFT.cache.has_key(cache):
+            resultFourier = self.computeQuadEstPhiDilationNormalizationCorrectedFFT.cache[cache]
+         # if this calculation was not done before
+         else:
+            resultFourier = doCalculation()
+            self.computeQuadEstPhiDilationNormalizationCorrectedFFT.cache[cache] = resultFourier
+
+
       return resultFourier
 
 
-   def computeQuadEstKappaDilationNormCorr(self, fC0, fCtot, fC0wg=None, lMin=1., lMax=1.e5, dataFourier=None, dataFourier2=None, path=None, corr=True, test=False):
+   def computeQuadEstKappaDilationNormCorr(self, fC0, fCtot, fC0wg=None, lMin=1., lMax=1.e5, dataFourier=None, dataFourier2=None, path=None, corr=True, test=False, cache=None):
       '''Returns the dilation-only normalized quadratic estimator for kappa in Fourier space,
       and saves it to file if needed.
       The normalization includes or not the correction for the multiplicative bias.
@@ -2507,7 +2555,7 @@ class FlatMap(object):
       resultFourier = self.kappaFromPhi(resultFourier)
       # compute normalization
       if corr:
-         normalizationFourier = self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test)
+         normalizationFourier = self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test, cache=cache)
       else:
          normalizationFourier = self.computeQuadEstPhiDilationNormalizationFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test)
       # normalized (not mean field-subtracted) QE for kappa
@@ -2518,7 +2566,7 @@ class FlatMap(object):
       return resultFourier
    
 
-   def computeQuadEstKappaDilationNoiseFFT(self, fC0, fCtot, fCfg=None, fC0wg=None, lMin=1., lMax=1.e5, corr=True, test=False):
+   def computeQuadEstKappaDilationNoiseFFT(self, fC0, fCtot, fCfg=None, fC0wg=None, lMin=1., lMax=1.e5, corr=True, test=False, cache=None):
       """Computes the lensing noise power spectrum N_L^kappa
       for the dilation estimator.
       fCfg: gives the N0 due only to the foreground component in the map.
@@ -2577,7 +2625,7 @@ class FlatMap(object):
 
       # compute normalization
       if corr:
-         normalizationFourier = self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test)
+         normalizationFourier = self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test, cache=cache)
       else:
          normalizationFourier = self.computeQuadEstPhiDilationNormalizationFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test)
 
@@ -2591,14 +2639,14 @@ class FlatMap(object):
       return resultFourier
 
 
-   def forecastN0KappaDilation(self, fC0, fCtot, fCfg=None, fC0wg=None, lMin=1., lMax=1.e5, corr=True, test=False):
+   def forecastN0KappaDilation(self, fC0, fCtot, fCfg=None, fC0wg=None, lMin=1., lMax=1.e5, corr=True, test=False, cache=None):
       """Interpolates the result for N_L^{kappa_dilation} = f(l),
       to be used for forecasts on lensing reconstruction.
       fCfg: gives the N0 due only to the foreground component in the map.
       fC0wg: to replace consistently C0 by a wiggles-only power spectrum.
       """
       print "computing the reconstruction noise"
-      n0Kappa = self.computeQuadEstKappaDilationNoiseFFT(fC0, fCtot, fCfg=fCfg, fC0wg=fC0wg, lMin=lMin, lMax=lMax, corr=corr, test=test)
+      n0Kappa = self.computeQuadEstKappaDilationNoiseFFT(fC0, fCtot, fCfg=fCfg, fC0wg=fC0wg, lMin=lMin, lMax=lMax, corr=corr, test=test, cache=cache)
       # keep only the real part (the imag. part should be zero, but is tiny in practice)
       n0Kappa = np.real(n0Kappa)
       # remove the nans
@@ -2623,7 +2671,7 @@ class FlatMap(object):
    ###############################################################################
    # Lensing multiplicative bias from lensed foregrounds
    
-   def computeMultBiasLensedForegroundsDilation(self, fC0, fCtot, fCfgBias, lMin=5.e2, lMax=3.e3, test=False):
+   def computeMultBiasLensedForegroundsDilation(self, fC0, fCtot, fCfgBias, lMin=5.e2, lMax=3.e3, test=False, cache=None):
       """Multiplicative bias to the dilation estimator
       from lensed foregrounds in the CMB map.
       fCfgBias: unlensed foreground power spectrum.
@@ -2681,7 +2729,7 @@ class FlatMap(object):
          self.plotFourier(resultFourier)
       
       # normalize with the standard normalization
-      resultFourier *= self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, fC0wg=None, lMin=lMin, lMax=lMax, test=False)
+      resultFourier *= self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, fC0wg=None, lMin=lMin, lMax=lMax, test=False, cache=cache)
       
       resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
       return resultFourier
@@ -2875,139 +2923,163 @@ class FlatMap(object):
       return resultFourier
 
 
-   def computeQuadEstPhiShearNormalizationCorrectedFFT(self, fC0, fCtot, lMin=5.e2, lMax=3.e3, test=False):
+   def computeQuadEstPhiShearNormalizationCorrectedFFT(self, fC0, fCtot, lMin=5.e2, lMax=3.e3, test=False, cache=None):
       """Multiplicative normalization for phi estimator from shear only,
       computed with FFT.
       This normalization corrects for the multiplicative bias in the estimator.
       ell cuts are performed to remain in the regime L_phi < l_T
       """
-      # weight function for shear
-      def fdLnC0dLnl(l):
-         e = 0.01
-         lup = l*(1.+e)
-         ldown = l*(1.-e)
-         result = fC0(lup) / fC0(ldown)
-         result = np.log(result) / (2.*e)
-         return result
-
-      def f(l):
-         # cut off the high ells from input map
-         if (l<lMin) or (l>lMax):
-            return 0.
-         result = fC0(l) / fCtot(l)**2
-         result *= fdLnC0dLnl(l) # for shear
-         result /= 0.5
-         if not np.isfinite(result):
-            result = 0.
-         return result
-
-      # generate shear maps
-      shearFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
-      #
-      cosXFourier = shearFourier * (self.lx**2 - self.ly**2) / self.l**2
-      cosXFourier[np.where(np.isfinite(cosXFourier)==False)] = 0.
-      cosX = self.inverseFourier(cosXFourier)
-      #
-      cosYFourier = shearFourier * self.lx * self.ly / self.l**2
-      cosYFourier[np.where(np.isfinite(cosYFourier)==False)] = 0.
-      cosY = self.inverseFourier(cosYFourier)
-
-      # generate gradient C0 map
-      f = lambda l: fC0(l) * (l>=lMin) * (l<=lMax)
-      c0Fourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
-      # the factor i in the gradient makes the Fourier function Hermitian
-      gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
-      gradX = self.inverseFourier(gradXFourier) # extra factor of i will be cancelled later
-      gradY = self.inverseFourier(gradYFourier) # extra factor of i will be cancelled later
-
-      # generate ell limit map
-      f = lambda l: (l>=lMin) * (l<=lMax)
-      ellLimitsFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
-      ellLimits = self.inverseFourier(ellLimitsFourier)
-
-
-      # Term 1
-      grad1XcosXFourier = self.fourier(gradX * cosX)
-      grad1XcosXFourier *= (self.lx**2 - self.ly**2)   # for cos
-      grad1XcosXFourier *= 2. * self.lx / 1.j / self.l**4 # for grad
-      grad1XcosXFourier[np.where(np.isfinite(grad1XcosXFourier)==False)] = 0.
-      #
-      grad1YcosXFourier = self.fourier(gradY * cosX)
-      grad1YcosXFourier *= (self.lx**2 - self.ly**2)   # for cos
-      grad1YcosXFourier *= 2. * self.ly / 1.j / self.l**4 # for grad
-      grad1YcosXFourier[np.where(np.isfinite(grad1YcosXFourier)==False)] = 0.
-      #
-      grad1XcosYFourier = self.fourier(gradX * cosY)
-      grad1XcosYFourier *= 4. * self.lx * self.ly   # for cos
-      grad1XcosYFourier *= 2. * self.lx / 1.j / self.l**4 # for grad
-      grad1XcosYFourier[np.where(np.isfinite(grad1XcosYFourier)==False)] = 0.
-      #
-      grad1YcosYFourier = self.fourier(gradY * cosY)
-      grad1YcosYFourier *= 4. * self.lx * self.ly   # for cos
-      grad1YcosYFourier *= 2. * self.ly / 1.j / self.l**4 # for grad
-      grad1YcosYFourier[np.where(np.isfinite(grad1YcosYFourier)==False)] = 0.
-      #
-      # sum
-      term1Fourier = grad1XcosXFourier + grad1YcosXFourier + grad1XcosYFourier + grad1YcosYFourier
-      if test:
-         print "showing various terms"
-         self.plotFourier(grad1XcosXFourier)
-         self.plotFourier(grad1YcosXFourier)
-         self.plotFourier(grad1XcosYFourier)
-         self.plotFourier(grad1YcosYFourier)
-         self.plotFourier(term1Fourier)
-
-
-      # Term 2
-      grad2XcosX = self.inverseFourier(gradXFourier * cosXFourier)
-      grad2XcosXFourier = self.fourier(grad2XcosX * ellLimits)
-      grad2XcosXFourier *= (self.lx**2 - self.ly**2)   # for cos
-      grad2XcosXFourier *= 2. * self.lx / 1.j / self.l**4 # for grad
-      grad2XcosXFourier[np.where(np.isfinite(grad2XcosXFourier)==False)] = 0.
-      #
-      grad2YcosX = self.inverseFourier(gradYFourier * cosXFourier)
-      grad2YcosXFourier = self.fourier(grad2YcosX * ellLimits)
-      grad2YcosXFourier *= (self.lx**2 - self.ly**2)   # for cos
-      grad2YcosXFourier *= 2. * self.ly / 1.j / self.l**4 # for grad
-      grad2YcosXFourier[np.where(np.isfinite(grad2YcosXFourier)==False)] = 0.
-      #
-      grad2XcosY = self.inverseFourier(gradXFourier * cosYFourier)
-      grad2XcosYFourier = self.fourier(grad2XcosY * ellLimits)
-      grad2XcosYFourier *= 4. * self.lx * self.ly   # for cos
-      grad2XcosYFourier *= 2. * self.lx / 1.j / self.l**4 # for grad
-      grad2XcosYFourier[np.where(np.isfinite(grad2XcosYFourier)==False)] = 0.
-      #
-      grad2YcosY = self.inverseFourier(gradYFourier * cosYFourier)
-      grad2YcosYFourier = self.fourier(grad2YcosY * ellLimits)
-      grad2YcosYFourier *= 4. * self.lx * self.ly   # for cos
-      grad2YcosYFourier *= 2. * self.ly / 1.j / self.l**4 # for grad
-      grad2YcosYFourier[np.where(np.isfinite(grad2YcosXFourier)==False)] = 0.
-      #
-      # sum
-      term2Fourier = grad2XcosXFourier + grad2YcosXFourier + grad2XcosYFourier + grad2YcosYFourier
-      if test:
-         print "showing various terms"
-         self.plotFourier(grad2XcosXFourier)
-         self.plotFourier(grad2YcosXFourier)
-         self.plotFourier(grad2XcosYFourier)
-         self.plotFourier(grad2YcosYFourier)
-         self.plotFourier(term2Fourier)
-
-
-      # sum and invert
-      resultFourier = 1. / (term1Fourier + term2Fourier)
-      resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
       
-      # remove L > 2 lMax
-      f = lambda l: (l<=2.*lMax)
-      resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
-      if test:
-         print "showing result"
-         self.plotFourier(resultFourier)
+      def doCalculation():
+         
+         # weight function for shear
+         def fdLnC0dLnl(l):
+            e = 0.01
+            lup = l*(1.+e)
+            ldown = l*(1.-e)
+            result = fC0(lup) / fC0(ldown)
+            result = np.log(result) / (2.*e)
+            return result
+
+         def f(l):
+            # cut off the high ells from input map
+            if (l<lMin) or (l>lMax):
+               return 0.
+            result = fC0(l) / fCtot(l)**2
+            result *= fdLnC0dLnl(l) # for shear
+            result /= 0.5
+            if not np.isfinite(result):
+               result = 0.
+            return result
+
+         # generate shear maps
+         shearFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
+         #
+         cosXFourier = shearFourier * (self.lx**2 - self.ly**2) / self.l**2
+         cosXFourier[np.where(np.isfinite(cosXFourier)==False)] = 0.
+         cosX = self.inverseFourier(cosXFourier)
+         #
+         cosYFourier = shearFourier * self.lx * self.ly / self.l**2
+         cosYFourier[np.where(np.isfinite(cosYFourier)==False)] = 0.
+         cosY = self.inverseFourier(cosYFourier)
+
+         # generate gradient C0 map
+         f = lambda l: fC0(l) * (l>=lMin) * (l<=lMax)
+         c0Fourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
+         # the factor i in the gradient makes the Fourier function Hermitian
+         gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
+         gradX = self.inverseFourier(gradXFourier) # extra factor of i will be cancelled later
+         gradY = self.inverseFourier(gradYFourier) # extra factor of i will be cancelled later
+
+         # generate ell limit map
+         f = lambda l: (l>=lMin) * (l<=lMax)
+         ellLimitsFourier = self.filterFourierIsotropic(f, dataFourier=np.ones_like(self.l), test=test)
+         ellLimits = self.inverseFourier(ellLimitsFourier)
+
+
+         # Term 1
+         grad1XcosXFourier = self.fourier(gradX * cosX)
+         grad1XcosXFourier *= (self.lx**2 - self.ly**2)   # for cos
+         grad1XcosXFourier *= 2. * self.lx / 1.j / self.l**4 # for grad
+         grad1XcosXFourier[np.where(np.isfinite(grad1XcosXFourier)==False)] = 0.
+         #
+         grad1YcosXFourier = self.fourier(gradY * cosX)
+         grad1YcosXFourier *= (self.lx**2 - self.ly**2)   # for cos
+         grad1YcosXFourier *= 2. * self.ly / 1.j / self.l**4 # for grad
+         grad1YcosXFourier[np.where(np.isfinite(grad1YcosXFourier)==False)] = 0.
+         #
+         grad1XcosYFourier = self.fourier(gradX * cosY)
+         grad1XcosYFourier *= 4. * self.lx * self.ly   # for cos
+         grad1XcosYFourier *= 2. * self.lx / 1.j / self.l**4 # for grad
+         grad1XcosYFourier[np.where(np.isfinite(grad1XcosYFourier)==False)] = 0.
+         #
+         grad1YcosYFourier = self.fourier(gradY * cosY)
+         grad1YcosYFourier *= 4. * self.lx * self.ly   # for cos
+         grad1YcosYFourier *= 2. * self.ly / 1.j / self.l**4 # for grad
+         grad1YcosYFourier[np.where(np.isfinite(grad1YcosYFourier)==False)] = 0.
+         #
+         # sum
+         term1Fourier = grad1XcosXFourier + grad1YcosXFourier + grad1XcosYFourier + grad1YcosYFourier
+         if test:
+            print "showing various terms"
+            self.plotFourier(grad1XcosXFourier)
+            self.plotFourier(grad1YcosXFourier)
+            self.plotFourier(grad1XcosYFourier)
+            self.plotFourier(grad1YcosYFourier)
+            self.plotFourier(term1Fourier)
+
+
+         # Term 2
+         grad2XcosX = self.inverseFourier(gradXFourier * cosXFourier)
+         grad2XcosXFourier = self.fourier(grad2XcosX * ellLimits)
+         grad2XcosXFourier *= (self.lx**2 - self.ly**2)   # for cos
+         grad2XcosXFourier *= 2. * self.lx / 1.j / self.l**4 # for grad
+         grad2XcosXFourier[np.where(np.isfinite(grad2XcosXFourier)==False)] = 0.
+         #
+         grad2YcosX = self.inverseFourier(gradYFourier * cosXFourier)
+         grad2YcosXFourier = self.fourier(grad2YcosX * ellLimits)
+         grad2YcosXFourier *= (self.lx**2 - self.ly**2)   # for cos
+         grad2YcosXFourier *= 2. * self.ly / 1.j / self.l**4 # for grad
+         grad2YcosXFourier[np.where(np.isfinite(grad2YcosXFourier)==False)] = 0.
+         #
+         grad2XcosY = self.inverseFourier(gradXFourier * cosYFourier)
+         grad2XcosYFourier = self.fourier(grad2XcosY * ellLimits)
+         grad2XcosYFourier *= 4. * self.lx * self.ly   # for cos
+         grad2XcosYFourier *= 2. * self.lx / 1.j / self.l**4 # for grad
+         grad2XcosYFourier[np.where(np.isfinite(grad2XcosYFourier)==False)] = 0.
+         #
+         grad2YcosY = self.inverseFourier(gradYFourier * cosYFourier)
+         grad2YcosYFourier = self.fourier(grad2YcosY * ellLimits)
+         grad2YcosYFourier *= 4. * self.lx * self.ly   # for cos
+         grad2YcosYFourier *= 2. * self.ly / 1.j / self.l**4 # for grad
+         grad2YcosYFourier[np.where(np.isfinite(grad2YcosXFourier)==False)] = 0.
+         #
+         # sum
+         term2Fourier = grad2XcosXFourier + grad2YcosXFourier + grad2XcosYFourier + grad2YcosYFourier
+         if test:
+            print "showing various terms"
+            self.plotFourier(grad2XcosXFourier)
+            self.plotFourier(grad2YcosXFourier)
+            self.plotFourier(grad2XcosYFourier)
+            self.plotFourier(grad2YcosYFourier)
+            self.plotFourier(term2Fourier)
+
+
+         # sum and invert
+         resultFourier = 1. / (term1Fourier + term2Fourier)
+         resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
+         
+         # remove L > 2 lMax
+         f = lambda l: (l<=2.*lMax)
+         resultFourier = self.filterFourierIsotropic(f, dataFourier=resultFourier, test=test)
+         if test:
+            print "showing result"
+            self.plotFourier(resultFourier)
+         return resultFourier
+
+
+      # Caching boiler plate
+      # if no caching is desired, just compute
+      if cache is None:
+         resultFourier = doCalculation()
+      # if caching is desired
+      else:
+         # if first call with caching, set up the cache dictionary
+         if not hasattr(self.computeQuadEstPhiShearNormalizationCorrectedFFT.__func__, "cache"):
+            self.computeQuadEstPhiShearNormalizationCorrectedFFT.__func__.cache = {}
+         # if the calculation has been done before
+         if self.computeQuadEstPhiShearNormalizationCorrectedFFT.cache.has_key(cache):
+            resultFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT.cache[cache]
+         # if this calculation was not done before
+         else:
+            resultFourier = doCalculation()
+            self.computeQuadEstPhiShearNormalizationCorrectedFFT.cache[cache] = resultFourier
+
+
       return resultFourier
 
 
-   def computeQuadEstKappaShearNormCorr(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None, dataFourier2=None, path=None, corr=True, test=False):
+   def computeQuadEstKappaShearNormCorr(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None, dataFourier2=None, path=None, corr=True, test=False, cache=None):
       '''Returns the shear-only normalized quadratic estimator for kappa in Fourier space,
       and saves it to file if needed.
       The normalization includes or not the correction for the multiplicative bias.
@@ -3018,7 +3090,7 @@ class FlatMap(object):
       resultFourier = self.kappaFromPhi(resultFourier)
       # compute normalization
       if corr:
-         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test, cache=cache)
       else:
          normalizationFourier = self.computeQuadEstPhiShearNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
       # normalized (not mean field-subtracted) QE for kappa
@@ -3031,7 +3103,7 @@ class FlatMap(object):
 
 
 
-   def computeQuadEstKappaShearNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False):
+   def computeQuadEstKappaShearNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False, cache=None):
       """Computes the lensing noise power spectrum N_L^kappa
       for the shear estimator.
       """
@@ -3128,7 +3200,7 @@ class FlatMap(object):
 
       # compute normalization
       if corr:
-         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test, cache=cache)
       else:
          normalizationFourier = self.computeQuadEstPhiShearNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
 
@@ -3142,12 +3214,12 @@ class FlatMap(object):
       return resultFourier
 
 
-   def forecastN0KappaShear(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False):
+   def forecastN0KappaShear(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False, cache=None):
       """Interpolates the result for N_L^{kappa_shear} = f(l),
       to be used for forecasts on lensing reconstruction.
       """
       print "computing the reconstruction noise"
-      n0Kappa = self.computeQuadEstKappaShearNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMax=lMax, corr=corr, test=test)
+      n0Kappa = self.computeQuadEstKappaShearNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMax=lMax, corr=corr, test=test, cache=cache)
       # keep only the real part (the imag. part should be zero, but is tiny in practice)
       n0Kappa = np.real(n0Kappa)
       # remove the nans
@@ -3172,7 +3244,7 @@ class FlatMap(object):
    ###############################################################################
    # Lensing multiplicative bias from lensed foregrounds
    
-   def computeMultBiasLensedForegroundsShear(self, fC0, fCtot, fCfgBias, lMin=5.e2, lMax=3.e3, test=False):
+   def computeMultBiasLensedForegroundsShear(self, fC0, fCtot, fCfgBias, lMin=5.e2, lMax=3.e3, test=False, cache=None):
       """Multiplicative bias to the shear estimator
       from lensed foregrounds in the CMB map.
       fCfgBias: unlensed foreground power spectrum.
@@ -3248,7 +3320,7 @@ class FlatMap(object):
       resultFourier = gradXcosXFourier + gradYcosXFourier + gradXcosYFourier + gradYcosYFourier
       
       # normalize with the standard normalization
-      resultFourier *= self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=False)
+      resultFourier *= self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=False, cache=cache)
       
       resultFourier[np.where(np.isfinite(resultFourier)==False)] = 0.
       if test:
@@ -3285,7 +3357,7 @@ class FlatMap(object):
    # Noise cross-power between shear and dilation
 
 
-   def computeQuadEstKappaShearDilationNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxD=1.e5, corr=True, test=False):
+   def computeQuadEstKappaShearDilationNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxD=1.e5, corr=True, test=False, cache=None):
       """Computes the lensing noise cross-spectrum N_L^{kappa_shear * kappa_dilation}
       between the shear and the dilation estimators.
       lMaxS: maximum temperature multipole used in the shear estimator
@@ -3398,8 +3470,8 @@ class FlatMap(object):
 
       # compute normalization
       if corr:
-         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxS, test=test)
-         normalizationFourier *= self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxD, test=test)
+         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxS, test=test, cache=cache)
+         normalizationFourier *= self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxD, test=test, cache=cache)
       else:
          normalizationFourier = self.computeQuadEstPhiShearNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMaxS, test=test)
          normalizationFourier = self.computeQuadEstPhiDilationNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMaxD, test=test)
@@ -3414,7 +3486,7 @@ class FlatMap(object):
       return resultFourier
 
 
-   def forecastN0KappaShearDilation(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxD=1.e5, corr=True, test=False):
+   def forecastN0KappaShearDilation(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxD=1.e5, corr=True, test=False, cache=None):
       """Interpolates the result for N_L^{kappa_shear * kappa_dilation} = f(l),
       to be used for forecasts on lensing reconstruction.
       lMaxS: maximum temperature multipole used in the shear estimator
@@ -3425,7 +3497,7 @@ class FlatMap(object):
       lMax = min(lMaxS, lMaxD)
       
       print "computing the reconstruction noise"
-      n0Kappa = self.computeQuadEstKappaShearDilationNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMaxS=lMaxS, lMaxD=lMaxD, corr=corr, test=test)
+      n0Kappa = self.computeQuadEstKappaShearDilationNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMaxS=lMaxS, lMaxD=lMaxD, corr=corr, test=test, cache=cache)
       # keep only the real part (the imag. part should be zero, but is tiny in practice)
       n0Kappa = np.real(n0Kappa)
       # remove the nans
@@ -3570,18 +3642,18 @@ class FlatMap(object):
       return resultFourier
 
 
-   def computeQuadEstPhiShearBNormalizationCorrectedFFT(self, fC0, fCtot, lMin=5.e2, lMax=3.e3, test=False):
+   def computeQuadEstPhiShearBNormalizationCorrectedFFT(self, fC0, fCtot, lMin=5.e2, lMax=3.e3, test=False, cache=None):
       """The shear B-mode estimator has zero response to lensing,
       so the corrected normalization would be to divide by zero,
       i.e. the unbiased normalization should be +infinity.
       Instead, here we decide to use the same normalization as the shear E-mode,
       so that shear E-mode and B-modes can be compared.
       """
-      resultFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+      resultFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test, cache=cache)
       return resultFourier
 
 
-   def computeQuadEstKappaShearBNormCorr(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None, dataFourier2=None, path=None, corr=True, test=False):
+   def computeQuadEstKappaShearBNormCorr(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None, dataFourier2=None, path=None, corr=True, test=False, cache=None):
       '''Returns the shear B-mode-only normalized quadratic estimator for kappa in Fourier space,
       and saves it to file if needed.
       The normalization includes or not the correction for the multiplicative bias.
@@ -3592,7 +3664,7 @@ class FlatMap(object):
       resultFourier = self.kappaFromPhi(resultFourier)
       # compute normalization
       if corr:
-         normalizationFourier = self.computeQuadEstPhiShearBNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+         normalizationFourier = self.computeQuadEstPhiShearBNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test, cache=cache)
       else:
          normalizationFourier = self.computeQuadEstPhiShearBNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
       # normalized (not mean field-subtracted) QE for kappa
@@ -3603,7 +3675,7 @@ class FlatMap(object):
       return resultFourier
 
 
-   def computeQuadEstKappaShearBNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False):
+   def computeQuadEstKappaShearBNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False, cache=None):
       """Computes the lensing noise power spectrum N_L^kappa
       for the shear B-mode estimator.
       """
@@ -3708,7 +3780,7 @@ class FlatMap(object):
 
       # compute normalization
       if corr:
-         normalizationFourier = self.computeQuadEstPhiShearBNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
+         normalizationFourier = self.computeQuadEstPhiShearBNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test, cache=cache)
       else:
          normalizationFourier = self.computeQuadEstPhiShearBNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, test=test)
 
@@ -3722,12 +3794,12 @@ class FlatMap(object):
       return resultFourier
 
 
-   def forecastN0KappaShearB(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False):
+   def forecastN0KappaShearB(self, fC0, fCtot, fCfg=None, lMin=1., lMax=1.e5, corr=True, test=False, cache=None):
       """Interpolates the result for N_L^{kappa_shearB} = f(l),
       to be used for forecasts on lensing reconstruction.
       """
       print "computing the reconstruction noise"
-      n0Kappa = self.computeQuadEstKappaShearBNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMax=lMax, corr=corr, test=test)
+      n0Kappa = self.computeQuadEstKappaShearBNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMax=lMax, corr=corr, test=test, cache=cache)
       # keep only the real part (the imag. part should be zero, but is tiny in practice)
       n0Kappa = np.real(n0Kappa)
       # remove the nans
@@ -3756,7 +3828,7 @@ class FlatMap(object):
    #!!! Not working: gives weird results, that are not independent of the direction of L.
 
 
-   def computeQuadEstKappaShearShearBNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxSB=1.e5, corr=True, test=False):
+   def computeQuadEstKappaShearShearBNoiseFFT(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxSB=1.e5, corr=True, test=False, cache=None):
       """Computes the lensing noise power spectrum N_L^kappa
       for the shear B-mode estimator.
       !!! Not working: gives weird results, that are not independent of the direction of L. Also, the result goes down as the numerical precision improves.
@@ -3868,11 +3940,11 @@ class FlatMap(object):
 
       # compute normalization: same for shear and shear B
       if corr:
-         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxS, test=test)
+         normalizationFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxS, test=test, cache=cache)
          if lMaxS==lMaxSB:
             normalizationFourier *= normalizationFourier
          else:
-            normalizationFourier *= self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxSB, test=test)
+            normalizationFourier *= self.computeQuadEstPhiShearNormalizationCorrectedFFT(fC0, fCtot, lMin=lMin, lMax=lMaxSB, test=test, cache=cache)
       
       else:
          normalizationFourier = self.computeQuadEstPhiShearNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMaxS, test=test)
@@ -3892,7 +3964,7 @@ class FlatMap(object):
 
 
 
-   def forecastN0KappaShearShearB(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxSB=1.e5, corr=True, test=False):
+   def forecastN0KappaShearShearB(self, fC0, fCtot, fCfg=None, lMin=1., lMaxS=1.e5, lMaxSB=1.e5, corr=True, test=False, cache=None):
       """Interpolates the result for N_L^{kappa_shear * kappa_shearB} = f(l),
       to be used for forecasts on lensing reconstruction.
       """
@@ -3900,7 +3972,7 @@ class FlatMap(object):
       # where lMax = min(lMaxS, lMaxD).
       lMax = min(lMaxS, lMaxSB)
       print "computing the reconstruction noise"
-      n0Kappa = self.computeQuadEstKappaShearShearBNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMaxS=lMaxS, lMaxSB=lMaxSB, corr=corr, test=test)
+      n0Kappa = self.computeQuadEstKappaShearShearBNoiseFFT(fC0, fCtot, fCfg=fCfg, lMin=lMin, lMaxS=lMaxS, lMaxSB=lMaxSB, corr=corr, test=test, cache=cache)
       # keep only the real part (the imag. part should be zero, but is tiny in practice)
       n0Kappa = np.real(n0Kappa)
       # remove the nans
