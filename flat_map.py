@@ -1498,6 +1498,7 @@ class FlatMap(object):
    
       # Actual calculation
       def doCalculation():
+         print "Doing full calculation: computeQuadEstPhiNormalizationFFT"
          # inverse-var weighted map
          def f(l):
             if (l<lMin) or (l>lMax):
@@ -1620,11 +1621,11 @@ class FlatMap(object):
             self.computeQuadEstPhiNormalizationFFT.__func__.cache = {}
          # if the calculation has been done before
          if self.computeQuadEstPhiNormalizationFFT.cache.has_key(cache):
-            resultFourier = self.computeQuadEstPhiNormalizationFFT.cache[cache]
+            resultFourier = self.computeQuadEstPhiNormalizationFFT.cache[cache].copy()
          # if this calculation was not done before
          else:
             resultFourier = doCalculation()
-            self.computeQuadEstPhiNormalizationFFT.cache[cache] = resultFourier
+            self.computeQuadEstPhiNormalizationFFT.cache[cache] = resultFourier.copy()
 
 
       return resultFourier
@@ -2430,7 +2431,7 @@ class FlatMap(object):
          fC0wg = fC0
       
       def doCalculation():
-         
+         print "doing full calculation: computeQuadEstPhiDilationNormalizationCorrectedFFT"
          def fdLnl2C0dLnl(l):
             e = 0.01
             lup = l*(1.+e)
@@ -2534,11 +2535,11 @@ class FlatMap(object):
             self.computeQuadEstPhiDilationNormalizationCorrectedFFT.__func__.cache = {}
          # if the calculation has been done before
          if self.computeQuadEstPhiDilationNormalizationCorrectedFFT.cache.has_key(cache):
-            resultFourier = self.computeQuadEstPhiDilationNormalizationCorrectedFFT.cache[cache]
+            resultFourier = self.computeQuadEstPhiDilationNormalizationCorrectedFFT.cache[cache].copy()
          # if this calculation was not done before
          else:
             resultFourier = doCalculation()
-            self.computeQuadEstPhiDilationNormalizationCorrectedFFT.cache[cache] = resultFourier
+            self.computeQuadEstPhiDilationNormalizationCorrectedFFT.cache[cache] = resultFourier.copy()
 
 
       return resultFourier
@@ -2553,13 +2554,11 @@ class FlatMap(object):
       resultFourier = self.quadEstPhiDilationNonNorm(fC0, fCtot, lMin=lMin, lMax=lMax, dataFourier=dataFourier, dataFourier2=dataFourier2, test=test)
       # convert from phi to kappa
       resultFourier = self.kappaFromPhi(resultFourier)
-      # compute normalization
+      # compute normalization (no mean field subtraction)
       if corr:
-         normalizationFourier = self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test, cache=cache)
+         resultFourier *= self.computeQuadEstPhiDilationNormalizationCorrectedFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test, cache=cache)
       else:
-         normalizationFourier = self.computeQuadEstPhiDilationNormalizationFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test)
-      # normalized (not mean field-subtracted) QE for kappa
-      resultFourier *= normalizationFourier
+         resultFourier *= self.computeQuadEstPhiDilationNormalizationFFT(fC0, fCtot, fC0wg=fC0wg, lMin=lMin, lMax=lMax, test=test)
       # save to file if needed
       if path is not None:
          self.saveDataFourier(resultFourier, path)
@@ -2931,7 +2930,7 @@ class FlatMap(object):
       """
       
       def doCalculation():
-         
+         print "doing full calculation: computeQuadEstPhiShearNormalizationCorrectedFFT"
          # weight function for shear
          def fdLnC0dLnl(l):
             e = 0.01
@@ -3069,11 +3068,11 @@ class FlatMap(object):
             self.computeQuadEstPhiShearNormalizationCorrectedFFT.__func__.cache = {}
          # if the calculation has been done before
          if self.computeQuadEstPhiShearNormalizationCorrectedFFT.cache.has_key(cache):
-            resultFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT.cache[cache]
+            resultFourier = self.computeQuadEstPhiShearNormalizationCorrectedFFT.cache[cache].copy()
          # if this calculation was not done before
          else:
             resultFourier = doCalculation()
-            self.computeQuadEstPhiShearNormalizationCorrectedFFT.cache[cache] = resultFourier
+            self.computeQuadEstPhiShearNormalizationCorrectedFFT.cache[cache] = resultFourier.copy()
 
 
       return resultFourier
