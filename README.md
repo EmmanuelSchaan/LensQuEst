@@ -10,7 +10,9 @@ pip install pyFFTW
 ```
 Just clone and run:
 ```
-python driver_lensquest.py
+python example_lensquest.py
 ```
+or look at ```example_lensquest.ipynb```.
+
 Hope you find this code useful! Please cite https://arxiv.org/abs/1804.06403 if you use this code in a publication. Do not hesitate to contact me with any questions: eschaan@lbl.gov
 
