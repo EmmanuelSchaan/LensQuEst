@@ -97,7 +97,7 @@ class Halofit(object):
          for iK in range(self.Nk):
             k = self.kvec[iK]
             Pmat[iK, iZ] = self.fPhalofit(k, z, A)
-         print 'done with redshift',z
+         print('done with redshift',z)
       np.savetxt(self.path, Pmat)
 
 
@@ -121,7 +121,7 @@ class Halofit(object):
          z = self.zvec[iZ]
          ax.loglog(self.kvec, self.Pmat[:,iZ], 'b-', label=r'$z=$'+str(z))
          #
-         Plin = np.array(map(lambda k: self.U.fPlin_z(k, z), self.kvec))
+         Plin = np.array([self.U.fPlin_z(k, z) for k in self.kvec])
          ax.loglog(self.kvec, Plin, 'k--')
       #
       ax.legend(loc=1)

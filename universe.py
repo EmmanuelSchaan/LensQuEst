@@ -210,7 +210,7 @@ class Universe(object):
       defined by W3d
       R in h^-1 Mpc, comoving scale, output is dimless
       """
-      F = (self.K**3) * self.Plin_z(z) * ( np.array(map(W3d, self.K * R))**2 ) / (2* np.pi**2)  # dimensionless
+      F = (self.K**3) * self.Plin_z(z) * ( np.array(list(map(W3d, self.K * R)))**2 ) / (2* np.pi**2)  # dimensionless
       dlnK = ( (self.K[1:]-self.K[:-1]) / self.K[:-1] )   # dimensionless
       Itrap = np.sum( dlnK * ( F[:-1] + F[1:] ) ) * 0.5
       return Itrap
@@ -237,7 +237,7 @@ class Universe(object):
       where sigma^2 = <( delta averaged on bin Dchi )^2>
       r is comoving scale in h^-1 Mpc
       """
-      F = self.K * self.Plin_z(z) * ( np.array(map(W2d, self.K * r))**2 ) / (2* np.pi)
+      F = self.K * self.Plin_z(z) * ( np.array(list(map(W2d, self.K * r)))**2 ) / (2* np.pi)
       dK = self.K[1:]-self.K[0:-1]
       Itrap = np.sum( dK * ( F[:-1] + F[1:] ) ) * 0.5
       return Itrap
@@ -266,7 +266,7 @@ class Universe(object):
       """R in h^-1 Mpc, comoving scale, output is dimless
       dln(sigma2) / dln(R)
       """
-      F = (self.K**3) * self.Plin_z(z) * 2.*np.array(map(W3d_sth, self.K*R))*np.array(map(dW3d_sth, self.K * R))*(self.K * R) / (2* np.pi**2)  # dimensionless
+      F = (self.K**3) * self.Plin_z(z) * 2.*np.array(list(map(W3d_sth, self.K*R)))*np.array(list(map(dW3d_sth, self.K * R)))*(self.K * R) / (2* np.pi**2)  # dimensionless
       dlnK = ( (self.K[1:]-self.K[:-1]) / self.K[:-1] )   # dimensionless
       Itrap = np.sum( dlnK * ( F[:-1] + F[1:] ) ) * 0.5
       result = Itrap / self.Sigma2(R, z, W3d_sth)
@@ -355,10 +355,10 @@ class Universe(object):
       K = np.logspace(np.log10(1.e-5), np.log10(1.e2), 1001, 10.)
       #
       f = lambda k: self.fPlin_z(k, z)
-      P = np.array(map(f, K))
+      P = np.array(list(map(f, K)))
       #
       f = lambda k: self.fdlnPdDelta(k, z)
-      dP = np.array(map(f, K))
+      dP = np.array(list(map(f, K)))
       
       # dlnP/ddelta
       fig = plt.figure(0)
@@ -400,7 +400,7 @@ class Universe(object):
    def RMSVelocity(self, R, z, W3d):
       """R in h^-1 Mpc, comoving scale, output is the rms velocity in (km/s)
       """
-      F = (self.K**3) * ( np.array(map(W3d, self.K * R))**2 ) / (2* np.pi**2)  # dimensionless
+      F = (self.K**3) * ( np.array(list(map(W3d, self.K * R)))**2 ) / (2* np.pi**2)  # dimensionless
       F *= self.Plin_z(z) / self.K**2
       F *= ( self.OmM*(1.+z)**3 / (self.Hubble(1./(1.+z))/self.Hubble(1.))**2 )**(2.*5./9.)   # f**2, where f = Omega_m(z)**5/9
       F *= ( self.Hubble(1./(1.+z))/(1.+z) )**2
@@ -412,8 +412,8 @@ class Universe(object):
    def RMSErrorRecVel(self, R, z, W3d):
       """R in h^-1 Mpc, comoving scale, output is the rms error on reconstructed velocity in (km/s)
       """
-      CorrCoeff = np.array(map(self.fr, self.K))
-      F = (self.K**3) * ( np.array(map(W3d, self.K * R))**2 ) / (2* np.pi**2)  # dimensionless
+      CorrCoeff = np.array(list(map(self.fr, self.K)))
+      F = (self.K**3) * ( np.array(list(map(W3d, self.K * R)))**2 ) / (2* np.pi**2)  # dimensionless
       F *= self.Plin_z(z) / self.K**2
       F *= 2.* (1. - CorrCoeff)
       F *= ( self.OmM*(1.+z)**3 / (self.Hubble(1./(1.+z))/self.Hubble(1.))**2 )**(2.*5./9.)   # f**2, where f = Omega_m(z)**5/9
@@ -501,7 +501,7 @@ class Universe(object):
       integ = vegas.Integrator([[1.e-4, 1.e1], [1.e-4, 1.e1], [-1., 1.]])
       integ(integrand, nitn=8, neval=1000)
       result = integ(integrand, nitn=8, neval=1000)
-      print result.sdev/result.mean
+      print(result.sdev/result.mean)
 #      print result.summary()
       return result.mean
    
@@ -515,11 +515,11 @@ class Universe(object):
       # We want the v_RMS^2, not the square of the average v,
       # this is why the scale is 0 Mpc/h
       f = lambda r: self.RMSVelocity(r*0., z, W3d_sth)**2
-      v2 = np.array(map(f, R))
+      v2 = np.array(list(map(f, R)))
       # We want the cosmic variance on v_RMS^2;
       # now this quantity will depend on the scale r
       f = lambda r: self.varRMSVSpherical(r, z, W3d_sth)
-      varV2 = np.array(map(f, R))
+      varV2 = np.array(list(map(f, R)))
       
       # volume of D56
       volumeD56 = 700.*(np.pi/180.)**2 # area in sr
@@ -568,7 +568,7 @@ class Universe(object):
       K = np.logspace(np.log10(1.e-5), np.log10(1.e2), 10001, 10.)
       z=0.
       f = lambda k: self.fPlin_z(k, z)
-      Plin = np.array(map(f, K))
+      Plin = np.array(list(map(f, K)))
       fig0 = plt.figure(0)
       ax = plt.subplot(111)
       ax.loglog(self.K, self.Plin, 'k.')
@@ -585,8 +585,8 @@ class Universe(object):
       fR  = lambda m: (3.*m / (4.*np.pi*self.rho_z(z)))**(1./3.)
       fS2 = lambda m: self.Sigma2(fR(m), z, W3d_sth)
       M = np.logspace(np.log10(1.e10), np.log10(1.e16), 101, 10.) # masses in h^-1 solarM
-      R = np.array(map(fR, M))
-      S2 = np.array(map( fS2, M ))
+      R = np.array(list(map(fR, M)))
+      S2 = np.array(list(map( fS2, M )))
       # Sigma2 = f(m)
       fig1 = plt.figure(1)
       ax = plt.subplot(111)
@@ -616,7 +616,7 @@ class Universe(object):
       W3d = W3d_sth  # choice of window function
 
       # correlation coefficient
-      CorrCoeff = np.array(map(self.fr, self.K))
+      CorrCoeff = np.array(list(map(self.fr, self.K)))
       
       # velocity power spectrum, normalized to its maximum
       F = self.Plin_z(z) / self.K**2
@@ -627,7 +627,7 @@ class Universe(object):
       F /= np.max(F)
       
       # integrand for RMS velocity, normalized to its maximum
-      G = F * (self.K**3) * ( np.array(map(W3d, self.K * R))**2 ) / (2* np.pi**2)  # dimensionless
+      G = F * (self.K**3) * ( np.array(list(map(W3d, self.K * R)))**2 ) / (2* np.pi**2)  # dimensionless
       G /= np.max(G)
       
       # integrand for RMS velocity error, normalized to its maximum
@@ -658,10 +658,10 @@ class Universe(object):
       Z = np.linspace(0., 10., 501)
       # comoving distance, i.e. comoving angular diameter distance (flat universe)
       fcomov = lambda z: self.ComovDist(1./(1.+z), 1.)
-      Comov = np.array(map( fcomov, Z ))
+      Comov = np.array(list(map( fcomov, Z )))
       # lookback time
       ftime = lambda z: self.Lookback(1./(1.+z), 1.)
-      Time = np.array(map( ftime, Z ))
+      Time = np.array(list(map( ftime, Z )))
       # proper distance, i.e. physical angular diameter distance (flat universe)
       Angular = Comov / (1.+Z)
       # luminosity distance, and distance modulus
@@ -669,7 +669,7 @@ class Universe(object):
       DistMod = 5.*( np.log10(Lumi*1.e6*self.h) - 1. )
       # linear growth factor
       fLinGrowth = lambda z: self.LinGrowth(1./(1.+z))
-      LinGrowth = np.array(map( fLinGrowth, Z ))
+      LinGrowth = np.array(list(map( fLinGrowth, Z )))
       
       plt.figure(0)
       ax=plt.subplot(111)
@@ -737,7 +737,7 @@ class Universe(object):
       #
       for a in A:
          fscaling = lambda fsky: self.Sigma2_2d(self.ComovDist(a, self.a_obs) * 2.*np.sqrt(fsky), 1./a-1., W2d_cth) * fsky
-         HSV = np.array(map(fscaling, Fsky))
+         HSV = np.array(list(map(fscaling, Fsky)))
          ax.loglog(Fsky, HSV, label=r'$z=$'+str(round(1./a-1., 2)))
       #
       ax.legend(loc=1)
@@ -758,7 +758,7 @@ class Universe(object):
       
       # variance of the matter overdensity smoothed over the survey (only used for HSV for 3d cov)
       R = (3.*V/(4.*np.pi))**(1./3.)   # for a spherical survey
-      HSV = np.array( map(lambda r: self.Sigma2(r, 1./self.a_obs-1., W3d_sth), R) ) * V
+      HSV = np.array( [self.Sigma2(r, 1./self.a_obs-1., W3d_sth) for r in R] ) * V
       
       fig=plt.figure(0)
       ax=plt.subplot(111)
@@ -781,7 +781,7 @@ class Universe(object):
       Z = np.linspace(0., 1., 101)
       
       f = lambda z: self.RMSVelocity(0., z, W3d_sth)
-      vRMS = np.array(map(f, Z))
+      vRMS = np.array(list(map(f, Z)))
    
       fig=plt.figure(0)
       ax=fig.add_subplot(111)
@@ -812,7 +812,7 @@ class Universe(object):
       Z = np.linspace(0., 1., 21)
       
       f = lambda z: self.ComovDist(1./(1.+z), 1.) * theta
-      Size = np.array(map(f, Z))
+      Size = np.array(list(map(f, Z)))
       
       fig=plt.figure(0)
       ax=plt.subplot(111)
@@ -869,7 +869,7 @@ class Universe(object):
       ax.semilogx(data[:,0], data[:,1], 'ko', label=r'from Mariana')
       ax.semilogx(self.K, 0.92*np.ones_like(self.K), 'r', label=r'$0.92$')
       ax.semilogx(self.K, 0.54/self.K**0.165, 'r', label=r'$0.54 / k^{0.165}$')
-      ax.semilogx(self.K, np.array(map(fr, self.K)), 'b', lw=2, label=r'fitting function')
+      ax.semilogx(self.K, np.array(list(map(fr, self.K))), 'b', lw=2, label=r'fitting function')
       #
       ax.grid()
       ax.legend(loc=1)
@@ -888,7 +888,7 @@ class Universe(object):
       """R in h^-1 Mpc, comoving scale, output is the rms velocity in (km/s)
       """
       f = lambda k: special.jv(0,k*R)
-      F = np.array(map(f, self.K))
+      F = np.array(list(map(f, self.K)))
       
       F *= (self.K**3) / (2* np.pi**2)
       F *= self.Plin_z(z) / self.K**2
@@ -903,7 +903,7 @@ class Universe(object):
       """R in h^-1 Mpc, comoving scale, output is in (km/s)^2
       """
       f = lambda k: special.jv(0,k*R)
-      F = np.array(map(f, self.K))
+      F = np.array(list(map(f, self.K)))
       
       F *= (self.K**3) / (2* np.pi**2)
       F *= self.Plin_z(z)
@@ -917,10 +917,10 @@ class Universe(object):
       R = np.logspace(np.log10(1.), np.log10(1.e3), 101, 10.)
       
       f = lambda r: self.fvelocityCorrelation(r, z)
-      VelCorr = np.array(map(f, R))
+      VelCorr = np.array(list(map(f, R)))
       
       f = lambda r: self.fdensityCorrelation(r, z)
-      DenCorr = np.array(map(f, R))
+      DenCorr = np.array(list(map(f, R)))
       
       fig=plt.figure(0)
       ax=plt.subplot(111)
