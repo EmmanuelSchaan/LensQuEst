@@ -385,8 +385,8 @@ class P2dAuto(object):
          ax.plot(Z, dP1h_dz+dP2h_dz, 'k', lw=2, label=r'1h+2h')
       #
       ax.legend(loc=4)
-      #ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      #ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'redshift $z$')
       ax.set_ylabel(r'$d C_{\ell='+str(int(l))+'} / dz$')
       #
@@ -402,8 +402,8 @@ class P2dAuto(object):
       ax.plot(Z, dP2h_dz / np.max(dP2h_dz), 'g', lw=2, label=r'2h')
       #
       ax.legend(loc=4)
-      #ax.set_xscale('log', nonposx='clip')
-      #ax.set_yscale('log', nonposy='clip')
+      #ax.set_xscale('log', nonpositive='clip')
+      #ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'redshift $z$')
       ax.set_ylabel(r'$d C_{\ell='+str(int(l))+'} / dz$ [arbitrary unit]')
       #
@@ -554,8 +554,8 @@ class P2dAuto(object):
       ax.plot(self.L, noisePlanck, c='gray', ls='--', lw=1, label=r'Planck noise')
       ax.plot(self.L, noiseCCAT, c='grey', ls='-.', lw=1, label=r'CCAT noise')
       #
-      ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.set_xlim((10., 5.e4))
       ax.set_ylim((1.e-1, 1.e6))
       ax.legend(loc=3, numpoints=1, fontsize=14, framealpha=1)
@@ -594,8 +594,8 @@ class P2dAuto(object):
          ax.plot(self.L, factor*F**2, 'b', lw=2)
       #
       ax.legend(loc=1, fontsize='x-small', labelspacing=0.1)
-      ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'\ell')
       #ax.set_xlim((50., 5.e4))
       #ax.set_ylabel(r'$T(\ell)$')
@@ -639,8 +639,8 @@ class P2dAuto(object):
       ax.plot(A, A*dT1h_da/np.max(A*dT1h_da), 'b', lw=2, label=r'integrand for T1h')
       #
       ax.legend(loc=2)
-      ax.set_xscale('log', nonposx='clip')
-      #ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      #ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'scale factor $a$')
       ax.set_ylabel(r'$d T_{\ell='+str(int(l))+'} / d\ln a$')
       #
@@ -655,8 +655,8 @@ class P2dAuto(object):
       ax.plot(Z, dT1h_dz/np.max(dT1h_dz), 'b', lw=2, label=r'integrand for T1h')
       #
       ax.legend(loc=2)
-      #ax.set_xscale('log', nonposx='clip')
-      #ax.set_yscale('log', nonposy='clip')
+      #ax.set_xscale('log', nonpositive='clip')
+      #ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'redshift $z$')
       ax.set_ylabel(r'$d T_{\ell='+str(int(l))+'} / dz$')
       #
@@ -833,8 +833,8 @@ class Planck13CIBData(object):
       ax.errorbar(L, P, yerr=sP, fmt='.', c='k', label=name)
       ax.plot(L, Pshot*np.ones_like(L), 'b--', label=r'quoted shot noise')
       #
-      ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.legend(loc=1, numpoints=1)
       ax.set_xlabel(r'\ell')
       ax.set_ylabel(r'$C_\ell^\text{CIB}$')

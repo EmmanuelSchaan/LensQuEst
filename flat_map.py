@@ -471,8 +471,8 @@ class FlatMap(object):
             ax.plot(L, factor*ClExpected, 'k')
          #
 #         ax.axhline(0.)
-         ax.set_xscale('log', nonposx='clip')
-         ax.set_yscale('log', nonposy='clip')
+         ax.set_xscale('log', nonpositive='clip')
+         ax.set_yscale('log', nonpositive='clip')
          #ax.set_xlim(1.e1, 4.e4)
          #ax.set_ylim(1.e-5, 2.e5)
          ax.set_xlabel(r'$\ell$')

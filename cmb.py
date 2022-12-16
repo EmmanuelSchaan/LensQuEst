@@ -263,7 +263,7 @@ class CMB(object):
       #ax.axhline(0., color='k')
       #
       ax.legend(loc=2)
-      ax.set_yscale('log', nonposy='mask')
+      ax.set_yscale('log', nonpositive='mask')
       ax.set_xscale('log')
       ax.set_ylim(1.e-10, 1.e10)
       ax.set_xlabel(r'frequency $\nu$ [GHz]')
@@ -693,7 +693,7 @@ class CMB(object):
          ax.plot(L, CIBPoisson, c=plt.cm.rainbow(float(iNu)/nNu), ls='--', lw=2, label=str(int(nu/1.e9))+'GHz, Poisson')
       #
       ax.set_xscale('log')
-      ax.set_yscale('log', nonposx='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.legend(loc=1)
       ax.set_xlim((1.e1, 1.e4))
       ax.set_xlabel(r'$\ell$', fontsize=24)

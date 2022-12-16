@@ -933,7 +933,7 @@ class WeightCIBPenin12(Projection):
       ax.plot(self.Z, self.JNu1/self.A*Chi**2, 'b', lw=2, label=str(int(self.nu/1.e9))+' GHz')
       #
       ax.legend(loc=1)
-      ax.set_yscale('log', nonposy='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'$z$')
       ax.set_ylabel(r'their $j_\nu=$ my $j_\nu \chi^2 / a = $ proj. kernel$/a$')
       #
@@ -976,8 +976,8 @@ class WeightCIBPenin12(Projection):
          ax.plot(self.Snu, self.Snu * self.dNdSnudV[iA, :], lw=2, label=r'$z=$'+str(int(z)))
       #
       ax.legend(loc=3)
-      ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'$S_\nu$ at $\nu=$'+str(np.int(self.nu/1.e9))+'GHz, [Jy]')
       ax.set_ylabel(r'$dN/d\text{ln}S_{\nu}/dV$ [gal/(Mpc/h)$^3$]')
       #
@@ -993,8 +993,8 @@ class WeightCIBPenin12(Projection):
          ax.plot(self.Snu, self.Snu**2 * self.Snu * self.dNdSnudV[iA, :], lw=2, label=r'$z=$'+str(int(z)))
       #
       ax.legend(loc=3)
-      ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'$S_\nu$ at $\nu=$'+str(np.int(self.nu/1.e9))+'GHz, [Jy]')
       ax.set_ylabel(r'$\frac{dP^\text{shot}}{d\text{ln}S_{\nu}} = S_{\nu}^2 \; dN/d\text{ln}S_{\nu}/dV$ [gal/(Mpc/h)$^3$]')
       #
@@ -1010,8 +1010,8 @@ class WeightCIBPenin12(Projection):
          ax.plot(self.Snu, self.Snu**4 * self.Snu * self.dNdSnudV[iA, :], lw=2, label=r'$z=$'+str(int(z)))
       #
       ax.legend(loc=3)
-      ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'$S_\nu$ at $\nu=$'+str(np.int(self.nu/1.e9))+'GHz, [Jy]')
       ax.set_ylabel(r'$\frac{d\mathcal{T}^\text{shot}}{d\text{ln}S_{\nu}} = S_{\nu}^4 \; dN/d\text{ln}S_{\nu}/dV$ [gal/(Mpc/h)$^3$]')
       #
@@ -1041,8 +1041,8 @@ class WeightCIBPenin12(Projection):
       ax.set_ylim((0., 1.1))
       ax.set_xlabel(r'$z$')
       ax.set_ylabel(r'arbitrary units')
-      #ax.set_xscale('log', nonposx='clip')
-      #ax.set_yscale('log', nonposy='clip')
+      #ax.set_xscale('log', nonpositive='clip')
+      #ax.set_yscale('log', nonpositive='clip')
       #
       #path="./figures/cib_penin12/emissivity_kernel"+str(int(self.nu/1.e9))+"GHz_penin12.pdf"
       #fig.savefig(path, bbox_inches='tight')
