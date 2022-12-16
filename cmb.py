@@ -213,8 +213,7 @@ class CMB(object):
 
       # CMB mean and fluctuations specific intensity, in SI
       fluct = 110.e-6/2.726 # primary fluctuations, ~110muK
-      f = lambda nu: self.blackbody(nu, self.Tcmb)
-      blackbody = np.array(list(map(f, Nu)))
+      blackbody = np.array([self.blackbody(nu, self.Tcmb) for nu in Nu])
       CMBfluct = fluct * blackbody
       # tSZ
       y = 0.1e-6/2.726   # tSZ amplitude, ~0.1muK for 1.e13Msun halo
@@ -229,8 +228,7 @@ class CMB(object):
       betaP = 2.1
       cibFreqDpdceTemperature = np.array([self.mu(nu, betaP, Td) for nu in Nu])
       cibFreqDpdceTemperature /= self.mu(150.e9, betaP, Td)
-      f = lambda nu: self.dlnBdlnT(nu, self.Tcmb)
-      dlnBdlnT = np.array(list(map(f, Nu)))
+      dlnBdlnT = np.array([self.dlnBdlnT(nu, self.Tcmb) for nu in  Nu])
       CIB = cibFreqDpdceTemperature * dlnBdlnT * blackbody
       
       

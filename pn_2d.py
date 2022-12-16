@@ -312,18 +312,15 @@ class P2dAuto(object):
       dChidZ = 3.e5 / H
       
       # redshift contributions for P1h and P2h
-      f = lambda a: self.integrandP(a, self.Pn.fP_1h, l)
-      dP1h_da = np.array(list(map(f, A)))
-      f = lambda a: self.integrandP(a, self.Pn.fP_2h, l)
-      dP2h_da = np.array(list(map(f, A)))
+      dP1h_da = np.array([self.integrandP(a, self.Pn.fP_1h, l) for a in  A])
+      dP2h_da = np.array([self.integrandP(a, self.Pn.fP_2h, l) for a in  A])
       #
       dP1h_dz = dP1h_da * A**2
       dP2h_dz = dP2h_da * A**2
       
       # redshift contributions for Pshot
       if hasattr(self.Weight, 'fdPshotNoise_da'):
-         f = lambda a: self.Weight.fdPshotNoise_da(a, l)
-         dPshot_da = np.array(list(map(f, A)))
+         dPshot_da = np.array([self.Weight.fdPshotNoise_da(a, l) for a in A])
          dPshot_dz = dPshot_da * A**2
       
       '''
@@ -481,8 +478,7 @@ class P2dAuto(object):
       dPdz = np.zeros((nZ, nL))
       for iL in range(nL):
          l = L[iL]
-         f = lambda a: self.integrandP(a, self.Pn.fP, l)
-         dPdz[:,iL] = np.array(list(map(f, A)))
+         dPdz[:,iL] = np.array([self.integrandP(a, self.Pn.fP, l) for a in A])
          dPdz[:,iL] *= A**2
 #         # normalize so int dz dP/dz = 1 for all ell
 #         dPdz[:,iL] /= np.trapz(Z, dPdz[:,iL])
@@ -629,8 +625,7 @@ class P2dAuto(object):
       #      print T3d_1h
       
       # integrand
-      f = lambda a: self.integrand(a, self.Pn.fT1hinterp, l)
-      dT1h_da = np.array(list(map(f, A)))
+      dT1h_da = np.array([self.integrand(a, self.Pn.fT1hinterp, l) for a in  A])
       
       dT1h_dz = dT1h_da * A**2
       

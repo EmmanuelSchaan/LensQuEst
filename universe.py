@@ -354,11 +354,9 @@ class Universe(object):
       """
       K = np.logspace(np.log10(1.e-5), np.log10(1.e2), 1001, 10.)
       #
-      f = lambda k: self.fPlin_z(k, z)
-      P = np.array(list(map(f, K)))
+      P = np.array([self.fPlin_z(k, z) for k in K])
       #
-      f = lambda k: self.fdlnPdDelta(k, z)
-      dP = np.array(list(map(f, K)))
+      dP = np.array([self.fdlnPdDelta(k, z) for k in K])
       
       # dlnP/ddelta
       fig = plt.figure(0)
@@ -514,12 +512,10 @@ class Universe(object):
       
       # We want the v_RMS^2, not the square of the average v,
       # this is why the scale is 0 Mpc/h
-      f = lambda r: self.RMSVelocity(r*0., z, W3d_sth)**2
-      v2 = np.array(list(map(f, R)))
+      v2 = np.array([self.RMSVelocity(r*0., z, W3d_sth)**2 for r in R])
       # We want the cosmic variance on v_RMS^2;
       # now this quantity will depend on the scale r
-      f = lambda r: self.varRMSVSpherical(r, z, W3d_sth)
-      varV2 = np.array(list(map(f, R)))
+      varV2 = np.array([self.varRMSVSpherical(r, z, W3d_sth) for r in R])
       
       # volume of D56
       volumeD56 = 700.*(np.pi/180.)**2 # area in sr
@@ -567,8 +563,7 @@ class Universe(object):
       # show linear power spectrum; test interpolation
       K = np.logspace(np.log10(1.e-5), np.log10(1.e2), 10001, 10.)
       z=0.
-      f = lambda k: self.fPlin_z(k, z)
-      Plin = np.array(list(map(f, K)))
+      Plin = np.array([self.fPlin_z(k, z) for k in K])
       fig0 = plt.figure(0)
       ax = plt.subplot(111)
       ax.loglog(self.K, self.Plin, 'k.')
@@ -779,9 +774,8 @@ class Universe(object):
    
    def plotRMSVel(self, z=0.):
       Z = np.linspace(0., 1., 101)
-      
-      f = lambda z: self.RMSVelocity(0., z, W3d_sth)
-      vRMS = np.array(list(map(f, Z)))
+
+      vRMS = np.array([self.RMSVelocity(0., z, W3d_sth) for z in Z])
    
       fig=plt.figure(0)
       ax=fig.add_subplot(111)
@@ -887,8 +881,7 @@ class Universe(object):
    def fvelocityCorrelation(self, R, z):
       """R in h^-1 Mpc, comoving scale, output is the rms velocity in (km/s)
       """
-      f = lambda k: special.jv(0,k*R)
-      F = np.array(list(map(f, self.K)))
+      F = np.array([special.jv(0,k*R) for k in self.K])
       
       F *= (self.K**3) / (2* np.pi**2)
       F *= self.Plin_z(z) / self.K**2
@@ -902,8 +895,7 @@ class Universe(object):
    def fdensityCorrelation(self, R, z):
       """R in h^-1 Mpc, comoving scale, output is in (km/s)^2
       """
-      f = lambda k: special.jv(0,k*R)
-      F = np.array(list(map(f, self.K)))
+      F = np.array([special.jv(0,k*R) for k in self.K])
       
       F *= (self.K**3) / (2* np.pi**2)
       F *= self.Plin_z(z)
@@ -915,12 +907,10 @@ class Universe(object):
    def plotCorrelationFunction(self):
       z = 0.
       R = np.logspace(np.log10(1.), np.log10(1.e3), 101, 10.)
-      
-      f = lambda r: self.fvelocityCorrelation(r, z)
-      VelCorr = np.array(list(map(f, R)))
-      
-      f = lambda r: self.fdensityCorrelation(r, z)
-      DenCorr = np.array(list(map(f, R)))
+
+      VelCorr = np.array([self.fvelocityCorrelation(r, z) for r in R])
+
+      DenCorr = np.array([self.fdensityCorrelation(r, z) for r in R])
       
       fig=plt.figure(0)
       ax=plt.subplot(111)
