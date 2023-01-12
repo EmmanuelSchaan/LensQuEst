@@ -198,7 +198,7 @@ class WeightLensSingle(Projection):
    
    def testHandEtAl13_fig1(self):
       # fig 1 from Hand et al 2013
-      Data = np.genfromtxt('./input/tests/HandEtAl13/HandEtAl13_fig1_cmb.txt')
+      Data = np.genfromtxt('../data/input/tests/HandEtAl13/HandEtAl13_fig1_cmb.txt')
       Z = Data[:, 0]
       A = 1./(1.+Z)
       Wgal_ref = Data[:, 1]
@@ -295,7 +295,7 @@ class WeightLensHandEtAl13(Projection):
 
    def testHandEtAl13_fig1(self):
       # fig 1 from Hand et al 2013
-      Data = np.genfromtxt('./input/tests/HandEtAl13/HandEtAl13_fig1_gal.txt')
+      Data = np.genfromtxt('../data/input/tests/HandEtAl13/HandEtAl13_fig1_gal.txt')
       Z = Data[:, 0]
       A = 1./(1.+Z)
       Wgal_ref = Data[:, 1]
@@ -321,7 +321,7 @@ class WeightLensHandEtAl13(Projection):
 
    def testHandEtAl13_fig2(self):
       # fig 2 from Hand et al 2013
-      Data = np.genfromtxt('./input/tests/HandEtAl13/HandEtAl13_fig2.txt')
+      Data = np.genfromtxt('../data/input/tests/HandEtAl13/HandEtAl13_fig2.txt')
       # my interpolation
       Z = np.linspace(0., 3., 101)
       Me = np.array(map(self.fdpdz, Z))
@@ -520,7 +520,7 @@ class WeightLensCIBPullen17(Projection):
       self.aMax = self.U.a_obs*(1.-epsilon)
       #
       # read digitized values
-      path = "./input/cib_zdist_pullen17/Pullen+17_"+str(nu)+".txt"
+      path = "../data/input/cib_zdist_pullen17/Pullen+17_"+str(nu)+".txt"
       data = np.genfromtxt(path)
       fdpdzNonNormalized = interp1d(data[:,0], data[:,1], kind='linear', bounds_error=False, fill_value=0.)
       # normalize to have int_zMin^zMax dz dPdz = 1
@@ -658,7 +658,7 @@ class WeightTracerCMASS(WeightTracer):
 
       # dn/dz, normalized such that int dz dn/dz = ngal
       # where ngal = number of gals per unit steradian
-      data = np.genfromtxt("./input/dndz/cmass_dndz.txt")
+      data = np.genfromtxt("../data/input/dndz/cmass_dndz.txt")
       Z = data[:,0]
       Dndz = data[:,1]
       f = UnivariateSpline(Z, Dndz, k=1, s=0)
@@ -683,7 +683,7 @@ class WeightTracerWISE(WeightTracer):
       
       # dn/dz, normalized such that int dz dn/dz = ngal
       # where ngal = number of gals per unit steradian
-      data = np.genfromtxt("./input/dndz/wise_dndz.txt")
+      data = np.genfromtxt("../data/input/dndz/wise_dndz.txt")
       Z = data[:,0]
       Dndz = data[:,1]
       f = UnivariateSpline(Z, Dndz, k=1, s=0)
@@ -824,10 +824,10 @@ class WeightCIBPenin12(Projection):
       # read the Bethermin+12 flux number counts
       # dNdSnudzdOmega in gal/Jy/sr,
       # improperly called dN / dSnu dz in Bethermin+12 and Penin+12
-      self.Z = np.genfromtxt("./input/cib_bethermin12_2sfm/converted/z.txt")
+      self.Z = np.genfromtxt("../data/input/cib_bethermin12_2sfm/converted/z.txt")
       self.A = 1./(1.+self.Z)
-      self.Snu = np.genfromtxt("./input/cib_bethermin12_2sfm/converted/Snu.txt") # in Jy
-      self.dNdSnudzdOmega = np.genfromtxt("./input/cib_bethermin12_2sfm/converted/dNdSnudz_Planck"+str(int(nu/1.e9))+"GHz.txt")
+      self.Snu = np.genfromtxt("../data/input/cib_bethermin12_2sfm/converted/Snu.txt") # in Jy
+      self.dNdSnudzdOmega = np.genfromtxt("../data/input/cib_bethermin12_2sfm/converted/dNdSnudz_Planck"+str(int(nu/1.e9))+"GHz.txt")
       # put A in growing order
       self.A = self.A[::-1]
       self.Z = self.Z[::-1]

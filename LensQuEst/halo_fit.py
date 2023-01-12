@@ -62,12 +62,12 @@ class Halofit(object):
       self.zvec = np.linspace(self.zmin, self.zmax, self.Nz)
    
       # create folder if needed
-      directory = "./output/halofit/"
+      directory = "../data/output/halofit/"
       if not os.path.exists(directory):
          os.makedirs(directory)
 
       # save if needed, then load
-      self.path = "./output/halofit/halofit_Planck_Nk" + str(self.Nk) + "_Nz" + str(self.Nz) + "_zmin" + str(self.zmin) + "_zmax" + str(self.zmax) + ".txt"
+      self.path = "../data/output/halofit/halofit_Planck_Nk" + str(self.Nk) + "_Nz" + str(self.Nz) + "_zmin" + str(self.zmin) + "_zmax" + str(self.zmax) + ".txt"
       if (save==True) or (not os.path.exists(self.path)):
          self.SaveAll()
       self.LoadAll()
@@ -97,7 +97,7 @@ class Halofit(object):
          for iK in range(self.Nk):
             k = self.kvec[iK]
             Pmat[iK, iZ] = self.fPhalofit(k, z, A)
-         print 'done with redshift',z
+         print('done with redshift',z)
       np.savetxt(self.path, Pmat)
 
 

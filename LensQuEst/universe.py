@@ -33,7 +33,7 @@ class Universe(object):
       self.Plin = self.fPlin0(self.K) # new array for power spectrum
 
       # read non-linear power spectrum (from CAMB with halofit)
-      #self.path_nonlin_matterpower = "./input/nonlin_matterpower_HillPajer13.dat"
+      #self.path_nonlin_matterpower = "../data/input/nonlin_matterpower_HillPajer13.dat"
       #readPnonlin = np.genfromtxt(self.path_nonlin_matterpower)
       #self.Knonlin = readPnonlin[:, 0]
       #self.Pnonlin = readPnonlin[:, 1]
@@ -501,7 +501,7 @@ class Universe(object):
       integ = vegas.Integrator([[1.e-4, 1.e1], [1.e-4, 1.e1], [-1., 1.]])
       integ(integrand, nitn=8, neval=1000)
       result = integ(integrand, nitn=8, neval=1000)
-      print result.sdev/result.mean
+      print(result.sdev/result.mean)
 #      print result.summary()
       return result.mean
    
@@ -859,7 +859,7 @@ class Universe(object):
    
       # read correlation coefficient between the reconstructed and true velocity
       # from Mariana's simulations
-      data = np.genfromtxt("./input/plot_mariana/r.txt")
+      data = np.genfromtxt("../data/input/plot_mariana/r.txt")
 
       fr = lambda k: min(0.92, 0.54/k**0.165)
       
@@ -953,7 +953,7 @@ class UnivHillPajer13(Universe):
       self.OmM = self.OmC + self.OmB
       
       # read linear power spectrum from CAMB
-      self.path_lin_matterpower = "./input/lin_matterpower_HillPajer13.dat"
+      self.path_lin_matterpower = "../data/input/lin_matterpower_HillPajer13.dat"
 
       super(UnivHillPajer13, self).__init__()
 
@@ -974,7 +974,7 @@ class UnivTinkerEtAl08(Universe):
       self.OmM = self.OmC + self.OmB
       
       # read linear power spectrum from CAMB
-      self.path_lin_matterpower = "./input/lin_matterpower_wmap1_TinkerEtAl08.dat"
+      self.path_lin_matterpower = "../data/input/lin_matterpower_wmap1_TinkerEtAl08.dat"
       
       super(UnivTinkerEtAl08, self).__init__()
 
@@ -995,7 +995,7 @@ class UnivSchaanEtAl14(Universe):
       self.OmC = self.OmM - self.OmB
       
       # read linear power spectrum from CAMB
-      self.path_lin_matterpower = "./input/lin_matterpower_SchaanEtAl14.dat"
+      self.path_lin_matterpower = "../data/input/lin_matterpower_SchaanEtAl14.dat"
       
       super(UnivSchaanEtAl14, self).__init__()
 
@@ -1017,7 +1017,7 @@ class UnivHandEtAl13(Universe):
       self.OmM = self.OmC + self.OmB
       
       # read linear power spectrum from CAMB
-      self.path_lin_matterpower = "./input/universe_HandEtAl13/lin_wmap9eCMB_HandEtAl13_matterpower.dat"
+      self.path_lin_matterpower = "../data/input/universe_HandEtAl13/lin_wmap9eCMB_HandEtAl13_matterpower.dat"
       
       super(UnivHandEtAl13, self).__init__()
 
@@ -1039,7 +1039,7 @@ class UnivMariana(Universe):
       self.OmC = self.OmM - self.OmB
       
       # read linear power spectrum from CAMB
-      self.path_lin_matterpower = "./input/universe_Mariana/lin_Mariana_matterpower.dat"
+      self.path_lin_matterpower = "../data/input/universe_Mariana/lin_Mariana_matterpower.dat"
       
       super(UnivMariana, self).__init__()
 
@@ -1060,6 +1060,6 @@ class UnivPlanck15(Universe):
       self.OmM = self.OmC + self.OmB
       
       # read linear power spectrum from CAMB
-      self.path_lin_matterpower = "./input/universe_Planck15/camb/matterpower_z0_lin.dat"
+      self.path_lin_matterpower = "../data/input/universe_Planck15/camb/matterpower_z0_lin.dat"
       
       super(UnivPlanck15, self).__init__()

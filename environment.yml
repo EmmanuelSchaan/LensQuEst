@@ -1,0 +1,16 @@
+name: nblensing
+channels:
+  - defaults
+dependencies:
+  - python
+  - jupyter
+  - pip
+  - pip:
+    - pyFFTW
+    - tqdm
+    - scipy
+    - matplotlib
+    - numpy
+    - seaborn
+    - astropy
+

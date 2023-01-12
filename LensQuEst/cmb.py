@@ -35,28 +35,28 @@ class CMB(object):
       # unlensed primary T, E, B
 
       # unlensed CMB
-      data = np.genfromtxt("./input/universe_Planck15/camb/lenspotentialCls.dat")
+      data = np.genfromtxt("../data/input/universe_Planck15/camb/lenspotentialCls.dat")
       self.funlensedTT_template = UnivariateSpline(data[:,0], data[:,1],k=1,s=0)
       lmin_unlensedCMB = data[0,0]
       lmax_unlensedCMB = data[-1,0]
       self.funlensedTT = lambda l: (l>=lmin_unlensedCMB and l<=lmax_unlensedCMB) * self.funlensedTT_template(l) * self.fdl_to_cl(l)
       
       # unlensed EE
-      data = np.genfromtxt("./input/universe_Planck15/camb/lenspotentialCls.dat")
+      data = np.genfromtxt("../data/input/universe_Planck15/camb/lenspotentialCls.dat")
       self.funlensedEE_template = UnivariateSpline(data[:,0], data[:,2],k=1,s=0)
       lmin_unlensedEE = data[0,0]
       lmax_unlensedEE = data[-1,0]
       self.funlensedEE = lambda l: (l>=lmin_unlensedEE and l<=lmax_unlensedEE) * self.funlensedEE_template(l) * self.fdl_to_cl(l)
       
       # unlensed BB
-      data = np.genfromtxt("./input/universe_Planck15/camb/lenspotentialCls.dat")
+      data = np.genfromtxt("../data/input/universe_Planck15/camb/lenspotentialCls.dat")
       self.funlensedBB_template = UnivariateSpline(data[:,0], data[:,3],k=1,s=0)
       lmin_unlensedBB = data[0,0]
       lmax_unlensedBB = data[-1,0]
       self.funlensedBB = lambda l: (l>=lmin_unlensedBB and l<=lmax_unlensedBB) * self.funlensedBB_template(l) * self.fdl_to_cl(l)
       
       # unlensed TE
-      data = np.genfromtxt("./input/universe_Planck15/camb/lenspotentialCls.dat")
+      data = np.genfromtxt("../data/input/universe_Planck15/camb/lenspotentialCls.dat")
       self.funlensedTE_template = UnivariateSpline(data[:,0], data[:,4],k=1,s=0)
       lmin_unlensedTE = data[0,0]
       lmax_unlensedTE = data[-1,0]
@@ -67,28 +67,28 @@ class CMB(object):
       # lensed primary T, E, B
       
       # lensed CMB
-      data = np.genfromtxt("./input/universe_Planck15/camb/lensedCls.dat")
+      data = np.genfromtxt("../data/input/universe_Planck15/camb/lensedCls.dat")
       self.flensedTT_template = UnivariateSpline(data[:,0], data[:,1],k=1,s=0)
       lmin_lensedCMB = data[0,0]
       lmax_lensedCMB = data[-1,0]
       self.flensedTT = lambda l: (l>=lmin_lensedCMB and l<=lmax_lensedCMB) * self.flensedTT_template(l) * self.fdl_to_cl(l)
 
       # lensed EE
-      data = np.genfromtxt("./input/universe_Planck15/camb/lensedCls.dat")
+      data = np.genfromtxt("../data/input/universe_Planck15/camb/lensedCls.dat")
       self.flensedEE_template = UnivariateSpline(data[:,0], data[:,2],k=1,s=0)
       lmin_lensedEE = data[0,0]
       lmax_lensedEE = data[-1,0]
       self.flensedEE = lambda l: (l>=lmin_lensedEE and l<=lmax_lensedEE) * self.flensedEE_template(l) * self.fdl_to_cl(l)
 
       # lensed BB
-      data = np.genfromtxt("./input/universe_Planck15/camb/lensedCls.dat")
+      data = np.genfromtxt("../data/input/universe_Planck15/camb/lensedCls.dat")
       self.flensedBB_template = UnivariateSpline(data[:,0], data[:,3],k=1,s=0)
       lmin_lensedBB = data[0,0]
       lmax_lensedBB = data[-1,0]
       self.flensedBB = lambda l: (l>=lmin_lensedBB and l<=lmax_lensedBB) * self.flensedBB_template(l) * self.fdl_to_cl(l)
 
       # lensed TE
-      data = np.genfromtxt("./input/universe_Planck15/camb/lensedCls.dat")
+      data = np.genfromtxt("../data/input/universe_Planck15/camb/lensedCls.dat")
       self.flensedTE_template = UnivariateSpline(data[:,0], data[:,4],k=1,s=0)
       lmin_lensedTE = data[0,0]
       lmax_lensedTE = data[-1,0]
@@ -106,7 +106,7 @@ class CMB(object):
       ###########################################
 
       # tSZ: Dunkley et al 2013
-      data = np.genfromtxt("./input/cmb/digitizing_SZ_template/tSZ.txt")
+      data = np.genfromtxt("../data/input/cmb/digitizing_SZ_template/tSZ.txt")
       ftSZ_template = UnivariateSpline(data[:,0], data[:,1],k=1,s=0)
       a_tSZ = 4.0
       lmin_tSZ = data[0,0]
@@ -114,7 +114,7 @@ class CMB(object):
       self.ftSZ = lambda l: (l>=lmin_tSZ and l<=lmax_tSZ) * a_tSZ * self.freqDpdceTSZTemp(self.nu1)*self.freqDpdceTSZTemp(self.nu2)/self.freqDpdceTSZTemp(150.e9)**2 * ftSZ_template(l) * self.fdl_to_cl(l)
 
       # kSZ: Dunkley et al 2013
-      data = np.genfromtxt("./input/cmb/digitizing_SZ_template/kSZ.txt")
+      data = np.genfromtxt("../data/input/cmb/digitizing_SZ_template/kSZ.txt")
       fkSZ_template = UnivariateSpline(data[:,0], data[:,1],k=1,s=0)
       a_kSZ = 1.5  # 1.5 predicted by Battaglia et al 2010. Upper limit from Dunkley+13 is 5.
       lmin_kSZ = data[0,0]
@@ -128,7 +128,7 @@ class CMB(object):
       betaC = 2.1
       Td = 9.7
       # watch for the minus sign
-      data = np.genfromtxt ("./input/cmb/digitizing_tSZCIB_template/minus_tSZ_CIB.txt")
+      data = np.genfromtxt ("../data/input/cmb/digitizing_tSZCIB_template/minus_tSZ_CIB.txt")
       ftSZCIB_template = UnivariateSpline(data[:,0], data[:,1],k=1,s=0)
       lmin_tSZ_CIB = data[0,0]
       lmax_tSZ_CIB = data[-1,0]
@@ -386,7 +386,7 @@ class CMB(object):
 
 
    def testInterpCMB(self):
-      data = np.genfromtxt("./input/universe_FerraroHensley14/lensedCls.dat")
+      data = np.genfromtxt("../data/input/universe_FerraroHensley14/lensedCls.dat")
       L = np.logspace(np.log10(1.), np.log10(1.e4), 1.e4, 10.)
       Interp = np.array(map(self.fCMB_template, L))
    
@@ -409,7 +409,7 @@ class CMB(object):
       result, error = integrate.quad(f, 1., 1.e4, epsabs=0., epsrel=1.e-5)
       result = np.sqrt(result)
       error = np.sqrt(error)
-      print "- temperature fluctuations due to CMB:", result, "muK"
+      print("- temperature fluctuations due to CMB:", result, "muK")
       #print "relative error on integral is", error/result
 
       # detector noise would diverge, because it is a constant divided by the beam**2
@@ -419,7 +419,7 @@ class CMB(object):
       result, error = integrate.quad(f, 1., 1.e4, epsabs=0., epsrel=1.e-5)
       result = np.sqrt(result)
       error = np.sqrt(error)
-      print "- temperature fluctuations due to CIB:", result, "muK"
+      print("- temperature fluctuations due to CIB:", result, "muK")
       #print "relative error on integral is", error/result
       
       # tSZ
@@ -427,7 +427,7 @@ class CMB(object):
       result, error = integrate.quad(f, 1., 1.e4, epsabs=0., epsrel=1.e-5)
       result = np.sqrt(result)
       error = np.sqrt(error)
-      print "- temperature fluctuations due to tSZ:", result, "muK"
+      print("- temperature fluctuations due to tSZ:", result, "muK")
       #print "relative error on integral is", error/result
       
       # kSZ
@@ -435,7 +435,7 @@ class CMB(object):
       result, error = integrate.quad(f, 1., 1.e4, epsabs=0., epsrel=1.e-5)
       result = np.sqrt(result)
       error = np.sqrt(error)
-      print "- temperature fluctuations due to kSZ:", result, "muK"
+      print("- temperature fluctuations due to kSZ:", result, "muK")
       #print "relative error on integral is", error/result
       
       return
@@ -452,7 +452,7 @@ class CMB(object):
       result, error = integrate.quad(f, 1., 1.e4, epsabs=0., epsrel=1.e-5)
       result = np.sqrt(result)
       error = np.sqrt(error)
-      print "- temperature fluctuations due to CMB:", result, "muK"
+      print("- temperature fluctuations due to CMB:", result, "muK")
       #print "relative error on integral is", error/result
       
       # detector noise
@@ -460,7 +460,7 @@ class CMB(object):
       result, error = integrate.quad(f, 1., 1.e4, epsabs=0., epsrel=1.e-5)
       result = np.sqrt(result)
       error = np.sqrt(error)
-      print "- temperature fluctuations due to detector noise:", result, "muK"
+      print("- temperature fluctuations due to detector noise:", result, "muK")
       #print "relative error on integral is", error/result
       
       # CIB Poisson and clustered
@@ -468,7 +468,7 @@ class CMB(object):
       result, error = integrate.quad(f, 1., 1.e4, epsabs=0., epsrel=1.e-5)
       result = np.sqrt(result)
       error = np.sqrt(error)
-      print "- temperature fluctuations due to CIB:", result, "muK"
+      print("- temperature fluctuations due to CIB:", result, "muK")
       #print "relative error on integral is", error/result
       
       # tSZ
@@ -476,7 +476,7 @@ class CMB(object):
       result, error = integrate.quad(f, 1., 1.e4, epsabs=0., epsrel=1.e-5)
       result = np.sqrt(result)
       error = np.sqrt(error)
-      print "- temperature fluctuations due to tSZ:", result, "muK"
+      print("- temperature fluctuations due to tSZ:", result, "muK")
       #print "relative error on integral is", error/result
       
       # kSZ
@@ -484,7 +484,7 @@ class CMB(object):
       result, error = integrate.quad(f, 1., 1.e4, epsabs=0., epsrel=1.e-5)
       result = np.sqrt(result)
       error = np.sqrt(error)
-      print "- temperature fluctuations due to kSZ:", result, "muK"
+      print("- temperature fluctuations due to kSZ:", result, "muK")
       #print "relative error on integral is", error/result
       
       
@@ -537,8 +537,8 @@ class CMB(object):
       Data[:,8] = GalacticDust
       Data[:,9] = DetectorNoise
       Data[:,10] = Total
-      #np.savetxt("./output/dl_elldpdtILC_ACT148_ACT218.txt", Data)
-      #np.savetxt("./output/dl_ACT148.txt", Data)
+      #np.savetxt("../data/output/dl_elldpdtILC_ACT148_ACT218.txt", Data)
+      #np.savetxt("../data/output/dl_ACT148.txt", Data)
       '''
       
       
