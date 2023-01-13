@@ -418,7 +418,7 @@ class FlatMap(object):
    ###############################################################################
    # Measure power spectrum
 
-   def crossPowerSpectrum(self, dataFourier1, dataFourier2, theory=[], fsCl=None, nBins=51, lRange=None, plot=False, name="test", save=False):
+   def crossPowerSpectrum(self, dataFourier1, dataFourier2, theory=[], theory_l=[], fsCl=None, nBins=51, lRange=None, plot=False, name="test", save=False):
 
       # define ell bins
       ell = self.l.flatten()
@@ -465,10 +465,12 @@ class FlatMap(object):
          ax.errorbar(lCen[Ipos], factor*Cl[Ipos], yerr=factor*sCl[Ipos], c='b', fmt='.')
          ax.errorbar(lCen[Ineg], -factor*Cl[Ineg], yerr=factor*sCl[Ineg], c='r', fmt='.')
          #
-         for f in theory:
+         if(len(theory)>0 and len(theory_l)==0):
+             theory_l = ['' for a in range(len(theory))]
+         for f,l in zip(theory, theory_l):
             L = np.logspace(np.log10(1.), np.log10(np.max(ell)), 201, 10.)
             ClExpected = np.array(list(map(f, L)))
-            ax.plot(L, factor*ClExpected, 'k')
+            ax.plot(L, factor*ClExpected, label=l+' theory')
          #
 #         ax.axhline(0.)
          ax.set_xscale('log')
@@ -479,6 +481,7 @@ class FlatMap(object):
          #ax.set_ylabel(r'$\ell^2 C_\ell$')
          ax.set_ylabel(r'$C_\ell$')
          #
+         plt.legend(frameon=False)
          if save==True:
             if name is None:
                name = self.name
@@ -492,10 +495,10 @@ class FlatMap(object):
 
 
 
-   def powerSpectrum(self, dataFourier=None, theory=[], fsCl=None, nBins=51, lRange=None, plot=False, name="test", save=False):
+   def powerSpectrum(self, dataFourier=None, theory=[], theory_l=[], fsCl=None, nBins=51, lRange=None, plot=False, name="test", save=False):
       if dataFourier is None:
          dataFourier = self.dataFourier.copy()
-      return self.crossPowerSpectrum(dataFourier1=dataFourier, dataFourier2=dataFourier, theory=theory, fsCl=fsCl, nBins=nBins, lRange=lRange, plot=plot, name=name, save=save)
+      return self.crossPowerSpectrum(dataFourier1=dataFourier, dataFourier2=dataFourier, theory=theory, theory_l=theory_l, fsCl=fsCl, nBins=nBins, lRange=lRange, plot=plot, name=name, save=save)
 
 
    def binTheoryPowerSpectrum(self, fCl, nBins=17, lRange=None):
@@ -2335,36 +2338,6 @@ class FlatMap(object):
       if path is not None:
          self.saveDataFourier(resultFourier, path)
       return resultFourier
-
-   def forecastN0KappaEnhanced(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None):
-      """This is the magic map m_L, such that when binned in L-annuli,
-      it gives the correction to the kappa auto-spectrum,
-      i.e. it subtracts the auto-only terms that cause the N0
-      and the secondary foreground biases.
-      To use: take the auto-spectrum, then subtract m_L to the auto-spectrum of the kappa QE.
-      """
-      # non-normalized phi inverse normalization map
-      resultFourier = self.computeQuadEstPhiInverseDataNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax, dataFourier=dataFourier)
-      # convert from phi to kappa
-      resultFourier = self.kappaFromPhi(resultFourier)
-      # do it again, since this is effectively a "power spectrum map"
-      resultFourier = self.kappaFromPhi(resultFourier)
-      # compute normalization
-      normalizationFourier = self.computeQuadEstPhiNormalizationFFT(fC0, fCtot, lMin=lMin, lMax=lMax)
-      # normalized correction for QE kappa auto-spectrum correction map
-      resultFourier *= normalizationFourier**2
-#!!!!!!!!! weird factor needed. I haven't figured out why
-      resultFourier /= self.sizeX*self.sizeY
-      # take square root, so that all you have to do is to take the power spectrum
-      resultFourier = np.sqrt(np.real(resultFourier))
-
-      # interpolate
-      where = (self.l.flatten()>0.)*(self.l.flatten()<2.*lMax)
-      L = self.l.flatten()[where]
-      N = resultFourier.flatten()[where]
-      lnfln = interp1d(np.log(L), np.log(N), kind='linear', bounds_error=False, fill_value=np.inf)
-      f = lambda l: np.exp(lnfln(np.log(l)))
-      return f
 
    ###############################################################################
    ###############################################################################
