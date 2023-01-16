@@ -1,6 +1,5 @@
 .DS_Store
 .DS_Store?
 *.pyc
-figures/
 *.ipynb_checkpoints/
 *__pycache__
