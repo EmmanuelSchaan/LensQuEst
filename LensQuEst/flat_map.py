@@ -418,7 +418,7 @@ class FlatMap(object):
    ###############################################################################
    # Measure power spectrum
 
-   def crossPowerSpectrum(self, dataFourier1, dataFourier2, theory=[], theory_l=[], fsCl=None, nBins=51, lRange=None, plot=False, name="test", save=False):
+   def crossPowerSpectrum(self, dataFourier1, dataFourier2, theory=[], theory_l=[], fsCl=None, nBins=51, lRange=None, plot=False, name="test", save=False, notGaussian=False):
 
       # define ell bins
       ell = self.l.flatten()
@@ -447,11 +447,21 @@ class FlatMap(object):
          sCl = Cl*np.sqrt(2)
       else:
          sCl = np.array(list(map(fsCl, lCen)))
+
+      # Test code for error bars on non-gaussian stat.
+      if(notGaussian):
+          sCl, _, _ = stats.binned_statistic(ell, power, statistic='std', bins=lEdges)
+          sCl = np.nan_to_num(Cl)
+          # finite volume correction
+#          sCl /= self.sizeX*self.sizeY
+
+
       # In case of a cross-correlation, Cl may be negative.
       # the absolute value is then still some estimate of the error bar
       sCl = np.abs(sCl)
       sCl /= np.sqrt(Nmodes)
       sCl[np.where(np.isfinite(sCl)==False)] = 0.
+
       
       
       if plot:
@@ -495,10 +505,10 @@ class FlatMap(object):
 
 
 
-   def powerSpectrum(self, dataFourier=None, theory=[], theory_l=[], fsCl=None, nBins=51, lRange=None, plot=False, name="test", save=False):
+   def powerSpectrum(self, dataFourier=None, theory=[], theory_l=[], fsCl=None, nBins=51, lRange=None, plot=False, name="test", save=False, notGaussian=False):
       if dataFourier is None:
          dataFourier = self.dataFourier.copy()
-      return self.crossPowerSpectrum(dataFourier1=dataFourier, dataFourier2=dataFourier, theory=theory, theory_l=theory_l, fsCl=fsCl, nBins=nBins, lRange=lRange, plot=plot, name=name, save=save)
+      return self.crossPowerSpectrum(dataFourier1=dataFourier, dataFourier2=dataFourier, theory=theory, theory_l=theory_l, fsCl=fsCl, nBins=nBins, lRange=lRange, plot=plot, name=name, save=save, notGaussian=notGaussian)
 
 
    def binTheoryPowerSpectrum(self, fCl, nBins=17, lRange=None):
