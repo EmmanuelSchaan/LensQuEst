@@ -1729,7 +1729,6 @@ class FlatMap(object):
       return f
    
    
-   
    def computeQuadEstKappaNorm(self, fC0, fCtot, lMin=1., lMax=1.e5, dataFourier=None, dataFourier2=None, path=None, test=False, cache=None):
       '''Returns the normalized quadratic estimator for kappa in Fourier space,
       and saves it to file if needed.
