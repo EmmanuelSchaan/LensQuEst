@@ -39,12 +39,12 @@ class P2dAuto(object):
       
       
    def SaveP(self):
-      print "precomputing p2d "+self.name
+      print("precomputing p2d "+self.name)
       data = np.zeros((len(self.L), 4))
       data[:,0] = self.L.copy()
-      data[:,1] = np.array(map(self.fP_1h, self.L))
-      data[:,2] = np.array(map(self.fP_2h, self.L))
-      data[:,3] = np.array(map(self.fPnoise, self.L))
+      data[:,1] = np.array(list(map(self.fP_1h, self.L)))
+      data[:,2] = np.array(list(map(self.fP_2h, self.L)))
+      data[:,3] = np.array(list(map(self.fPnoise, self.L)))
       np.savetxt("./output/pn_2d/p2d_"+self.name+".txt", data)
 
    def LoadP(self):
@@ -67,14 +67,14 @@ class P2dAuto(object):
       self.fPtotinterp = lambda l: forPtot(l)*(l>=min(self.L))*(l<=max(self.L))
    
    def SaveT(self):
-      print "precomputing t2d "+self.name
+      print("precomputing t2d "+self.name)
       data = np.zeros((len(self.L), 6))
       data[:,0] = self.L.copy()
-      data[:,1] = np.array(map(self.fT_1h, self.L))
-      data[:,2] = np.array(map(self.fTnoise, self.L))
-      data[:,3] = np.array(map(self.fT_2h, self.L))
-      data[:,4] = np.array(map(self.fT_4h, self.L))
-      data[:,5] = np.array(map(self.fT_ssv, self.L))
+      data[:,1] = np.array(list(map(self.fT_1h, self.L)))
+      data[:,2] = np.array(list(map(self.fTnoise, self.L)))
+      data[:,3] = np.array(list(map(self.fT_2h, self.L)))
+      data[:,4] = np.array(list(map(self.fT_4h, self.L)))
+      data[:,5] = np.array(list(map(self.fT_ssv, self.L)))
       np.savetxt("./output/pn_2d/t2d_"+self.name+".txt", data)
    
    def LoadT(self):
@@ -120,13 +120,13 @@ class P2dAuto(object):
    def fP_1h(self, l):
       f = lambda a: self.integrandP(a, self.Pn.fP1hinterp, l)
       result = integrate.quad(f, self.aMin, self.aMax, epsabs=0, epsrel=1.e-2)[0]
-      print "done ell=",l
+      print("done ell=",l)
       return result
 
    def fP_2h(self, l):
       f = lambda a: self.integrandP(a, self.Pn.fP2hinterp, l)
       result = integrate.quad(f, self.aMin, self.aMax, epsabs=0, epsrel=1.e-2)[0]
-      print "done ell=",l
+      print("done ell=",l)
       return result
 
    def fP(self, l):
@@ -176,19 +176,19 @@ class P2dAuto(object):
    def fT_1h(self, l):
       f = lambda a: self.integrandT(a, self.Pn.fT1hinterp, l)
       result = integrate.quad(f, self.aMin, self.aMax, epsabs=0, epsrel=1.e-2)[0]
-      print "done ell=",l
+      print("done ell=",l)
       return result
 
    def fT_2h(self, l):
       f = lambda a: self.integrandT(a, self.Pn.fT2hinterp, l)
       result = integrate.quad(f, self.aMin, self.aMax, epsabs=0, epsrel=1.e-2)[0]
-      print "done ell=",l
+      print("done ell=",l)
       return result
 
    def fT_4h(self, l):
       f = lambda a: self.integrandT(a, self.Pn.fT4hinterp, l)
       result = integrate.quad(f, self.aMin, self.aMax, epsabs=0, epsrel=1.e-2)[0]
-      print "done ell=",l
+      print("done ell=",l)
       return result
 
    def fT(self, l):
@@ -205,7 +205,7 @@ class P2dAuto(object):
       g = lambda k,z: self.Pn.fT_ssv(k, k, k*L/l, z)
       f = lambda a: self.integrandT(a, g, l)
       result = integrate.quad(f, self.aMin, self.aMax, epsabs=0, epsrel=1.e-2)[0]
-      print "done ell=",l
+      print("done ell=",l)
       return result
 
 
@@ -226,7 +226,7 @@ class P2dAuto(object):
    def fTnondiag(self, l1, l2):
       f = lambda a: self.integrandTNonDiag(a, self.Pn.fTnondiag, l1, l2)
       result = integrate.quad(f, self.aMin, self.aMax, epsabs=0, epsrel=1.e-2)[0]
-      print "done ell=",l1, l2
+      print("done ell=",l1, l2)
       return result
 
 
@@ -304,26 +304,23 @@ class P2dAuto(object):
    def plotdPdz(self, l=1.e3):
       A = np.linspace(self.aMin, self.aMax, 201)
       Z = 1./A-1.
-      print Z
-      Chi = np.array(map(lambda a: self.U.ComovDist(a, 1.), A))
-      H = np.array(map(lambda a: self.U.Hubble(a), A))
-      W = np.array(map(self.Weight.f, A))
+      print(Z)
+      Chi = np.array([self.U.ComovDist(a, 1.) for a in A])
+      H = np.array([self.U.Hubble(a) for a in A])
+      W = np.array(list(map(self.Weight.f, A)))
       dChidA = 3.e5 / (H*A**2)
       dChidZ = 3.e5 / H
       
       # redshift contributions for P1h and P2h
-      f = lambda a: self.integrandP(a, self.Pn.fP_1h, l)
-      dP1h_da = np.array(map(f, A))
-      f = lambda a: self.integrandP(a, self.Pn.fP_2h, l)
-      dP2h_da = np.array(map(f, A))
+      dP1h_da = np.array([self.integrandP(a, self.Pn.fP_1h, l) for a in  A])
+      dP2h_da = np.array([self.integrandP(a, self.Pn.fP_2h, l) for a in  A])
       #
       dP1h_dz = dP1h_da * A**2
       dP2h_dz = dP2h_da * A**2
       
       # redshift contributions for Pshot
       if hasattr(self.Weight, 'fdPshotNoise_da'):
-         f = lambda a: self.Weight.fdPshotNoise_da(a, l)
-         dPshot_da = np.array(map(f, A))
+         dPshot_da = np.array([self.Weight.fdPshotNoise_da(a, l) for a in A])
          dPshot_dz = dPshot_da * A**2
       
       '''
@@ -388,8 +385,8 @@ class P2dAuto(object):
          ax.plot(Z, dP1h_dz+dP2h_dz, 'k', lw=2, label=r'1h+2h')
       #
       ax.legend(loc=4)
-      #ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      #ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'redshift $z$')
       ax.set_ylabel(r'$d C_{\ell='+str(int(l))+'} / dz$')
       #
@@ -405,8 +402,8 @@ class P2dAuto(object):
       ax.plot(Z, dP2h_dz / np.max(dP2h_dz), 'g', lw=2, label=r'2h')
       #
       ax.legend(loc=4)
-      #ax.set_xscale('log', nonposx='clip')
-      #ax.set_yscale('log', nonposy='clip')
+      #ax.set_xscale('log', nonpositive='clip')
+      #ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'redshift $z$')
       ax.set_ylabel(r'$d C_{\ell='+str(int(l))+'} / dz$ [arbitrary unit]')
       #
@@ -428,9 +425,9 @@ class P2dAuto(object):
       zEdges = np.linspace(zMin-0.5*dZ, zMax+0.5*dZ, nZ+1)
 
       A = 1./(1.+Z)
-      Chi = np.array(map(lambda a: self.U.ComovDist(a, 1.), A))
-      H = np.array(map(lambda a: self.U.Hubble(a), A))
-      W = np.array(map(self.Weight.f, A))
+      Chi = np.array([self.U.ComovDist(a, 1.) for a in A])
+      H = np.array([self.U.Hubble(a) for a in A])
+      W = np.array(list(map(self.Weight.f, A)))
       dChidA = 3.e5 / (H*A**2)
       dChidZ = 3.e5 / H
       
@@ -481,13 +478,12 @@ class P2dAuto(object):
       dPdz = np.zeros((nZ, nL))
       for iL in range(nL):
          l = L[iL]
-         f = lambda a: self.integrandP(a, self.Pn.fP, l)
-         dPdz[:,iL] = np.array(map(f, A))
+         dPdz[:,iL] = np.array([self.integrandP(a, self.Pn.fP, l) for a in A])
          dPdz[:,iL] *= A**2
 #         # normalize so int dz dP/dz = 1 for all ell
 #         dPdz[:,iL] /= np.trapz(Z, dPdz[:,iL])
       dPdz = np.abs(dPdz)
-      print "done total"
+      print("done total")
       
       # show the 2d color plot
       zz,ll = np.meshgrid(zEdges, lEdges, indexing='ij')
@@ -530,9 +526,9 @@ class P2dAuto(object):
       # compare to some noise levels
       # !!!!! these are only relevant for \sim 545GHz, for Planck and CCAT
       f = lambda l: fdetectorNoise(l, sensitivity=13.5, beam=4.8)
-      noisePlanck = np.array(map(f, self.L))
+      noisePlanck = np.array(list(map(f, self.L)))
       f = lambda l: fdetectorNoise(l, sensitivity=1.2, beam=0.5)
-      noiseCCAT = np.array(map(f, self.L))
+      noiseCCAT = np.array(list(map(f, self.L)))
       
       
       # P
@@ -558,8 +554,8 @@ class P2dAuto(object):
       ax.plot(self.L, noisePlanck, c='gray', ls='--', lw=1, label=r'Planck noise')
       ax.plot(self.L, noiseCCAT, c='grey', ls='-.', lw=1, label=r'CCAT noise')
       #
-      ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.set_xlim((10., 5.e4))
       ax.set_ylim((1.e-1, 1.e6))
       ax.legend(loc=3, numpoints=1, fontsize=14, framealpha=1)
@@ -594,12 +590,12 @@ class P2dAuto(object):
       ax.plot(self.L, factor*self.Tnoise, 'fuchsia', lw=1, label=r'$T^\text{shot}$')
       #
       if func is not None:
-         F = np.array(map(func, self.L))
+         F = np.array(list(map(func, self.L)))
          ax.plot(self.L, factor*F**2, 'b', lw=2)
       #
       ax.legend(loc=1, fontsize='x-small', labelspacing=0.1)
-      ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'\ell')
       #ax.set_xlim((50., 5.e4))
       #ax.set_ylabel(r'$T(\ell)$')
@@ -614,9 +610,9 @@ class P2dAuto(object):
    def plotIntegrandT(self, l=5.e2):
       A = np.linspace(self.aMin, self.aMax, 101)
       Z = 1./A-1.
-      Chi = np.array(map(lambda a: self.U.ComovDist(a, 1.), A))
-      H = np.array(map(lambda a: self.U.Hubble(a), A))
-      W = np.array(map(self.Weight.f, A))
+      Chi = np.array([self.U.ComovDist(a, 1.) for a in A])
+      H = np.array([self.U.Hubble(a) for a in A])
+      W = np.array(list(map(self.Weight.f, A)))
       dChidA = 3.e5 / (H*A**2)
       dChidZ = 3.e5 / H
       
@@ -624,13 +620,12 @@ class P2dAuto(object):
          z = 1./a-1.
          chi = self.U.ComovDist(a, 1.)
          return self.Pn.fT1hinterp(l/chi, z)
-      T3d_1h = np.array(map(f, A))
+      T3d_1h = np.array(list(map(f, A)))
       
       #      print T3d_1h
       
       # integrand
-      f = lambda a: self.integrand(a, self.Pn.fT1hinterp, l)
-      dT1h_da = np.array(map(f, A))
+      dT1h_da = np.array([self.integrand(a, self.Pn.fT1hinterp, l) for a in  A])
       
       dT1h_dz = dT1h_da * A**2
       
@@ -644,8 +639,8 @@ class P2dAuto(object):
       ax.plot(A, A*dT1h_da/np.max(A*dT1h_da), 'b', lw=2, label=r'integrand for T1h')
       #
       ax.legend(loc=2)
-      ax.set_xscale('log', nonposx='clip')
-      #ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      #ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'scale factor $a$')
       ax.set_ylabel(r'$d T_{\ell='+str(int(l))+'} / d\ln a$')
       #
@@ -660,8 +655,8 @@ class P2dAuto(object):
       ax.plot(Z, dT1h_dz/np.max(dT1h_dz), 'b', lw=2, label=r'integrand for T1h')
       #
       ax.legend(loc=2)
-      #ax.set_xscale('log', nonposx='clip')
-      #ax.set_yscale('log', nonposy='clip')
+      #ax.set_xscale('log', nonpositive='clip')
+      #ax.set_yscale('log', nonpositive='clip')
       ax.set_xlabel(r'redshift $z$')
       ax.set_ylabel(r'$d T_{\ell='+str(int(l))+'} / dz$')
       #
@@ -838,8 +833,8 @@ class Planck13CIBData(object):
       ax.errorbar(L, P, yerr=sP, fmt='.', c='k', label=name)
       ax.plot(L, Pshot*np.ones_like(L), 'b--', label=r'quoted shot noise')
       #
-      ax.set_xscale('log', nonposx='clip')
-      ax.set_yscale('log', nonposy='clip')
+      ax.set_xscale('log', nonpositive='clip')
+      ax.set_yscale('log', nonpositive='clip')
       ax.legend(loc=1, numpoints=1)
       ax.set_xlabel(r'\ell')
       ax.set_ylabel(r'$C_\ell^\text{CIB}$')
