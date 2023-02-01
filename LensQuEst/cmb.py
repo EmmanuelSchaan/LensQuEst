@@ -368,7 +368,20 @@ class CMB(object):
 
    ###############################################################################
    
-   # total
+   # forground power spectrum
+   def fForeground(self, l):
+      result = self.fCIBPoisson(l)
+      result += self.fCIBClustered(l)
+      result += self.ftSZ(l)
+      result += self.fkSZ(l)
+      result += self.ftSZ_CIB(l)
+      result += self.fradioPoisson(l)
+      result += self.fgalacticDust(l)
+      return result
+
+
+
+  # lensed plus FG power specturm
    def ftotal(self, l):
       result = self.flensedTT(l)
       result += self.fCIBPoisson(l)
