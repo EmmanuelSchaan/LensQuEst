@@ -1,0 +1,59 @@
+nohup: ignoring input
+Map properties
+CMB experiment properties
+CMB lensing power spectrum
+Gets a theoretical prediction for the noise
+computing the reconstruction noise
+Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+  0%|          | 0/10 [00:00<?, ?it/s]Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+ 10%|█         | 1/10 [00:34<05:09, 34.41s/it]Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+ 20%|██        | 2/10 [01:08<04:31, 33.95s/it]Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+ 30%|███       | 3/10 [01:40<03:52, 33.25s/it]Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+ 40%|████      | 4/10 [02:23<03:42, 37.01s/it]Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+ 50%|█████     | 5/10 [03:03<03:11, 38.35s/it]Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+ 60%|██████    | 6/10 [03:40<02:30, 37.63s/it]Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+ 70%|███████   | 7/10 [04:14<01:49, 36.49s/it]Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+ 80%|████████  | 8/10 [04:45<01:09, 34.79s/it]Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+ 90%|█████████ | 9/10 [05:24<00:35, 35.99s/it]Doing full calculation: computeQuadEstPhiNormalizationFFT
+
+
+100%|██████████| 10/10 [05:55<00:00, 34.44s/it]100%|██████████| 10/10 [05:55<00:00, 35.51s/it]
+[[ 0.00000000e+00+0.00000000e+00j  6.85628843e-04+1.08501482e-04j
+   2.78258619e-04+6.46984270e-05j ...  0.00000000e+00+0.00000000e+00j
+   0.00000000e+00+0.00000000e+00j  0.00000000e+00+0.00000000e+00j]
+ [ 5.07622364e-04-8.36483597e-05j -3.72244968e-05-6.26626690e-05j
+  -1.20480657e-04+1.15524817e-05j ...  0.00000000e+00+0.00000000e+00j
+   0.00000000e+00+0.00000000e+00j  0.00000000e+00+0.00000000e+00j]
+ [ 2.88430129e-04-1.95624130e-05j -9.46293348e-05-4.65760854e-07j
+  -7.24575068e-05+2.23862574e-06j ...  0.00000000e+00+0.00000000e+00j
+   0.00000000e+00+0.00000000e+00j  0.00000000e+00+0.00000000e+00j]
+ ...
+ [ 1.21584349e-04-2.93704380e-05j -1.01729178e-04-1.14512655e-06j
+   6.40450933e-05+3.85280880e-05j ...  0.00000000e+00+0.00000000e+00j
+   0.00000000e+00+0.00000000e+00j  0.00000000e+00+0.00000000e+00j]
+ [ 2.88430129e-04+1.95624130e-05j -1.90792809e-04-5.31478472e-05j
+   1.47276876e-05+2.56981952e-05j ...  0.00000000e+00+0.00000000e+00j
+   0.00000000e+00+0.00000000e+00j  0.00000000e+00+0.00000000e+00j]
+ [ 5.07622364e-04+8.36483597e-05j -2.95147065e-04-3.59617628e-05j
+  -1.60421367e-04-1.11275213e-04j ...  0.00000000e+00+0.00000000e+00j
+   0.00000000e+00+0.00000000e+00j  0.00000000e+00+0.00000000e+00j]]
