@@ -1562,7 +1562,7 @@ class FlatMap(object):
    
       # Actual calculation
       def doCalculation():
-         print("Doing full calculation: computeQuadEstPhiNormalizationFFT")
+         # print("Doing full calculation: computeQuadEstPhiNormalizationFFT")
          # inverse-var weighted map
          def f(l):
             if (l<lMin) or (l>lMax):

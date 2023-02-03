@@ -1,3 +1,5 @@
+import pickle
+
 import os, sys
 WORKING_DIR = os.path.dirname(os.path.abspath(''))
 sys.path.insert(1, os.path.join(WORKING_DIR,'LensQuEst'))
@@ -16,7 +18,12 @@ from weight import *
 from pn_2d import *
 
 #####
-N_runs = 10
+N_runs = 400
+mask_file = 'mask_simple400x400.png'
+template_name = mask_file.split('/')[-1].split('.')[0]
+template_fname = '%s.pkl'%(template_name)
+process = False
+print(template_fname)
 #####
 
 print("Map properties")
@@ -72,8 +79,11 @@ def rgb2gray(rgb):
 from scipy.ndimage import gaussian_filter 
 from scipy.fft import fft2
 
-mask = 1-rgb2gray(plt.imread('../data/input/mask_simple400x400.png'))
-apodized_mask = gaussian_filter(mask, 5)
+mask = 1-rgb2gray(plt.imread(mask_file))
+apodized_mask = mask
+
+if(process):
+    apodized_mask = gaussian_filter(mask, 5)
 
 print('\n')
 
@@ -118,10 +128,11 @@ for i in trange(N_runs):
         mean_field = kappa_map
     else:
         mean_field += kappa_map
-    print('\n')
+    f = open(template_fname, 'wb') 
+    pickle.dump(mean_field/(i+1), f)
 
-import pickle
-f = open('../data/output/mean_field%dx%d.pkl'%(nX,nY), 'wb') 
+
+f = open(template_fname, 'wb') 
 pickle.dump(mean_field/N_runs, f)
 
 print(mean_field/N_runs)
